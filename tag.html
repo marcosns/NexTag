@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>NexTag</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+font-family:'Inter',sans-serif;
+background:linear-gradient(135deg,#0f172a,#1e293b);
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+color:white;
+}
+
+.card{
+background:rgba(255,255,255,0.05);
+backdrop-filter: blur(20px);
+border-radius:28px;
+padding:40px 30px;
+width:90%;
+max-width:360px;
+text-align:center;
+box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+h2{font-weight:600;}
+p{font-size:14px;color:rgba(255,255,255,0.7);margin-bottom:25px;}
+
+.btn{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+width:100%;
+padding:14px;
+margin:10px 0;
+border-radius:14px;
+border:none;
+font-size:15px;
+cursor:pointer;
+background:rgba(255,255,255,0.08);
+transition:.25s;
+color:white;
+}
+
+.btn:hover{
+background:rgba(255,255,255,0.18);
+transform:translateY(-2px);
+}
+
+.modal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.9);
+display:none;
+justify-content:center;
+align-items:center;
+z-index:999;
+}
+
+.modal-content{
+width:95%;
+height:95%;
+background:#000;
+border-radius:16px;
+overflow:hidden;
+position:relative;
+}
+
+iframe{
+width:100%;
+height:100%;
+border:none;
+}
+
+.close{
+position:absolute;
+top:15px;
+right:20px;
+background:rgba(0,0,0,0.6);
+width:36px;
+height:36px;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:50%;
+font-size:20px;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2 id="titulo">NexTag</h2>
+<p id="subtitulo">Carregando...</p>
+
+<div id="botoes"></div>
+
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <span class="close" onclick="fecharModal()">&times;</span>
+    <iframe id="pdfFrame"></iframe>
+  </div>
+</div>
+
+<script>
+
+const API_URL = "COLE_SUA_URL_AQUI"
+
+let arquivoAtual = ""
+
+function getParametro(nome){
+  return new URL(window.location.href).searchParams.get(nome)
+}
+
+async function carregar(){
+
+  const id = getParametro("id")
+
+  const res = await fetch(API_URL,{
+    method:"POST",
+    body: JSON.stringify({
+      action:"getObraCompleta",
+      id_obra:id
+    })
+  })
+
+  const data = await res.json()
+
+  document.getElementById("titulo").innerText = data.nome || "NexTag"
+  document.getElementById("subtitulo").innerText = data.descricao || ""
+
+  montarBotoes(data.arquivos || [])
+
+}
+
+function montarBotoes(lista){
+
+  const container = document.getElementById("botoes")
+  container.innerHTML = ""
+
+  lista.forEach(item => {
+
+    const btn = document.createElement("button")
+    btn.className = "btn"
+
+    btn.innerHTML = `<i class="${item.icone}"></i> ${item.nome}`
+
+    btn.onclick = () => abrirPDF(item.fileId)
+
+    container.appendChild(btn)
+
+  })
+
+}
+
+function abrirPDF(fileId){
+
+  arquivoAtual = fileId
+
+  document.getElementById("pdfFrame").src =
+  `https://drive.google.com/file/d/${fileId}/preview`
+
+  document.getElementById("modal").style.display = "flex"
+
+}
+
+function fecharModal(){
+  document.getElementById("modal").style.display = "none"
+  document.getElementById("pdfFrame").src = ""
+}
+
+carregar()
+
+</script>
+
+</body>
+</html>
