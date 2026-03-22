@@ -66,7 +66,7 @@ p{margin-top:10px;}
     <label>Obra:</label>
     <select id="obraSelect"></select>
     <input type="text" id="nomeArquivo" placeholder="Nome do Arquivo">
-    <input type="text" id="fileId" placeholder="ID do Google Drive">
+    <input type="text" id="fileLink" placeholder="Link completo (Drive, OneDrive, SharePoint)">
     <input type="text" id="icone" placeholder="Ícone Font Awesome (ex: fas fa-book)">
     <button onclick="adicionarArquivo()">Salvar Arquivo</button>
     <p id="statusMsg" style="color:lightgreen;"></p>
@@ -117,29 +117,30 @@ function preencherObras(){
   })
 }
 
-// FUNÇÃO PARA ADICIONAR ARQUIVO
+// FUNÇÃO PARA ADICIONAR ARQUIVO (ACEITA LINK COMPLETO)
 async function adicionarArquivo(){
   const obra = document.getElementById("obraSelect").value
   const nome = document.getElementById("nomeArquivo").value
-  const fileId = document.getElementById("fileId").value
+  const link = document.getElementById("fileLink").value.trim()
   const icone = document.getElementById("icone").value || "fas fa-file"
 
-  if(!nome || !fileId){
-    document.getElementById("statusMsg").innerText = "Preencha Nome e FileId!"
+  if(!nome || !link){
+    document.getElementById("statusMsg").innerText = "Preencha Nome e Link!"
     return
   }
 
+  // POST para Apps Script
   const res = await fetch(API_URL,{
     method:"POST",
-    body: JSON.stringify({action:"addArquivo", usuario:usuarioLogado, obra, nome, fileId, icone})
+    body: JSON.stringify({action:"addArquivo", usuario:usuarioLogado, obra, nome, link, icone})
   })
   const data = await res.json()
 
   if(data.ok){
     document.getElementById("statusMsg").innerText = "Arquivo adicionado com sucesso!"
-    // limpa campos
+    // Limpar campos
     document.getElementById("nomeArquivo").value=""
-    document.getElementById("fileId").value=""
+    document.getElementById("fileLink").value=""
     document.getElementById("icone").value=""
   } else {
     document.getElementById("statusMsg").innerText = "Erro ao adicionar arquivo"
