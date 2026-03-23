@@ -115,11 +115,11 @@ h1, h2 {
 <!-- Modal para visualizar PDF ou Drive -->
 <div id="modal">
   <button onclick="fecharModal()">×</button>
-  <iframe id="pdfFrame"></iframe>
+  <iframe id="pdfFrame" title="Visualizador de Arquivo"></iframe>
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwOy46eJ2OX6OQoF6QN0eAaaswtC5Uf9jH2PQDPDouydG5iga931JsLRHBWxIIJ1kc1/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxRUYRiACowD4X9GeIFBkvw-2v73NywdprF4UWHi2_Be5vJ3O1umf7TwQZ681U4m0BIRQ/exec";
 
 function getParametro(nome){
   return new URL(window.location.href).searchParams.get(nome);
@@ -130,16 +130,19 @@ async function carregar(){
   if(!id) return;
 
   try {
-    const res = await fetch(API_URL,{
-      method:"POST",
+    const res = await fetch(API_URL, {
+      method: "POST",
       body: JSON.stringify({
-        action:"getProjetoCompleto",
+        action: "getProjetoCompleto",
         id_projeto: id
       })
     });
 
     const data = await res.json();
-    if(!data.ok) return;
+    if(!data.ok){
+      console.warn("Projeto não encontrado ou erro na resposta.");
+      return;
+    }
 
     const projeto = data.projeto;
 
@@ -154,17 +157,16 @@ async function carregar(){
     }
 
     // LOGO
-    const card = document.querySelector(".card");
-    if(projeto.logo && card){
-      const antigo = document.getElementById("logoProjeto");
-      if(antigo) antigo.innerHTML = '';
-      antigo.insertAdjacentHTML("afterbegin",
-        `<img id="logoProjetoImg" src="${projeto.logo}" alt="Logo do Projeto">`
+    const logoDiv = document.getElementById("logoProjeto");
+    logoDiv.innerHTML = ""; // limpa anterior
+    if(projeto.logo){
+      logoDiv.insertAdjacentHTML("afterbegin",
+        `<img id="logoProjetoImg" src="${projeto.logo}" alt="Logo do Projeto" />`
       );
     }
 
     // BOTÕES
-    montarBotoes(data.arquivos || []);
+    montarBotoes(projeto.arquivos || []);
 
   } catch(e){
     console.error("Erro ao carregar projeto:", e);
@@ -198,7 +200,6 @@ function fecharModal(){
   document.getElementById("pdfFrame").src = "";
 }
 
-// Executa carregamento ao abrir a página
 carregar();
 </script>
 
