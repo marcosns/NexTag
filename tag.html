@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexTag</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  color:white;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding:30px 10px;
+  background:#0f172a;
+  background-size:cover;
+  background-position:center;
+}
+
+/* efeito vidro */
+.card{
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-radius:20px;
+  padding:25px;
+  width:100%;
+  max-width:480px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  text-align:center;
+}
+
+/* logo */
+#logo img{
+  max-width:140px;
+  max-height:80px;
+  object-fit:contain;
+  margin-bottom:15px;
+}
+
+/* textos */
+h1{margin:10px 0;font-size:22px;}
+p{opacity:0.8;margin-bottom:15px;}
+
+/* botões */
+.btn{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  background:#1e293b;
+  color:white;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:15px;
+}
+
+.btn:hover{background:#334155;}
+
+.btn i{
+  width:22px;
+  text-align:center;
+}
+
+/* modal */
+#modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+}
+
+#modal iframe{
+  width:90%;
+  height:85%;
+  border:none;
+  border-radius:12px;
+}
+
+#close{
+  position:absolute;
+  top:20px;
+  right:20px;
+  background:#ef4444;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  cursor:pointer;
+  font-size:18px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <div id="logo"></div>
+  <h1 id="titulo">Carregando...</h1>
+  <p id="descricao"></p>
+  <div id="botoes"></div>
+</div>
+
+<div id="modal">
+  <div id="close" onclick="fechar()">×</div>
+  <iframe id="frame"></iframe>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbxd_CL9xUtcXumO4KKO-OqTXLCzm2gpcm31edbbRfjFbxAee6ErkSzqXrvsruaxkvDgyQ/exec";
+
+// 🔹 pegar ID da URL
+function getID(){
+  return new URLSearchParams(window.location.search).get("id");
+}
+
+// 🔹 carregar projeto
+async function carregar(){
+
+  const id = getID();
+
+  if(!id){
+    alert("ID não informado");
+    return;
+  }
+
+  try{
+
+    const url = `${API_URL}?action=getProjetoCompleto&id_projeto=${id}`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    console.log("DATA:", data);
+
+    if(!data.ok){
+      alert(data.erro);
+      return;
+    }
+
+    const p = data.projeto;
+
+    // textos
+    document.getElementById("titulo").innerText = p.nome;
+    document.getElementById("descricao").innerText = p.descricao;
+
+    // background
+    if(p.background){
+      document.body.style.backgroundImage = `url('${p.background}')`;
+    }
+
+    // logo
+    if(p.logo){
+      document.getElementById("logo").innerHTML =
+        `<img src="${p.logo}">`;
+    }
+
+    // arquivos
+    montarBotoes(p.arquivos);
+
+  }catch(e){
+    console.error(e);
+    alert("Erro ao carregar projeto");
+  }
+}
+
+// 🔹 montar botões
+function montarBotoes(lista){
+
+  const div = document.getElementById("botoes");
+  div.innerHTML = "";
+
+  lista.forEach(a=>{
+
+    const btn = document.createElement("button");
+    btn.className = "btn";
+
+    btn.innerHTML = `<i class="${a.icone || 'fas fa-file'}"></i> ${a.nome}`;
+
+    btn.onclick = ()=>abrir(a.fileId);
+
+    div.appendChild(btn);
+  });
+}
+
+// 🔹 abrir arquivo
+function abrir(link){
+
+  if(!link) return;
+
+  if(link.includes("preview")){
+    document.getElementById("modal").style.display="flex";
+    document.getElementById("frame").src = link;
+  }else{
+    window.open(link,"_blank");
+  }
+}
+
+// 🔹 fechar modal
+function fechar(){
+  document.getElementById("modal").style.display="none";
+  document.getElementById("frame").src="";
+}
+
+// iniciar
+carregar();
+</script>
+
+</body>
+</html>
