@@ -32,25 +32,21 @@ body {
   text-align: center;
 }
 
-input, select {
+input, select, button {
   width: 100%;
   padding: 10px;
   margin: 8px 0;
   border-radius: 8px;
   border: none;
+  font-size: 16px;
+  box-sizing: border-box;
 }
 
 button {
-  width: 100%;
-  padding: 12px;
   background: #1e293b;
   color: white;
-  border: none;
-  border-radius: 8px;
   cursor: pointer;
-  margin-top: 10px;
   font-weight: 600;
-  font-size: 16px;
 }
 
 button:hover {
@@ -72,13 +68,82 @@ p {
   object-fit: contain;
   margin-bottom: 20px;
 }
+
+/* Seletor customizado de ícones */
+
+.icon-select-wrapper {
+  position: relative;
+  user-select: none;
+  margin-top: 8px;
+}
+
+.icon-select-selected {
+  background-color: #222c3b;
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.icon-select-selected i {
+  font-size: 18px;
+  margin-right: 10px;
+}
+
+.icon-select-arrow {
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  padding: 4px;
+  transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+  margin-left: auto;
+  transition: transform 0.3s ease;
+}
+
+.icon-select-arrow.open {
+  transform: rotate(-135deg);
+}
+
+.icon-select-items {
+  position: absolute;
+  background-color: #222c3b;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+  z-index: 1000;
+  display: none;
+}
+
+.icon-select-items div {
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: white;
+}
+
+.icon-select-items div i {
+  font-size: 18px;
+  margin-right: 10px;
+}
+
+.icon-select-items div:hover {
+  background-color: #334155;
+}
 </style>
 </head>
 <body>
 
 <div class="container">
 
-  <div id="seulogo.png"></div>
+  <div id="logoProjeto"></div>
 
   <h2>Painel NexTag</h2>
 
@@ -101,22 +166,17 @@ p {
     <input type="text" id="fileLink" placeholder="Link completo (Drive, OneDrive, SharePoint)" />
 
     <label>Ícone Font Awesome:</label>
-    <select id="iconeSelect">
-      <option value="fas fa-file">Arquivo Padrão</option>
-      <option value="fas fa-file-pdf">PDF</option>
-      <option value="fas fa-image">Imagem</option>
-      <option value="fas fa-video">Vídeo</option>
-      <option value="fas fa-music">Música</option>
-      <option value="fas fa-book">Livro</option>
-      <option value="fas fa-file-word">Word</option>
-      <option value="fas fa-file-excel">Excel</option>
-      <option value="fas fa-file-powerpoint">PowerPoint</option>
-      <option value="fas fa-download">Download</option>
-      <option value="fas fa-link">Link</option>
-      <option value="fas fa-folder">Pasta</option>
-      <option value="fas fa-rocket">rocket</option>
-      <option value="fas fa-ship">ship</option>
-    </select>
+
+    <!-- Seletor customizado -->
+    <div class="icon-select-wrapper" id="iconeSelectWrapper">
+      <div class="icon-select-selected" tabindex="0">
+        <i class="fas fa-file"></i> <span>Arquivo Padrão</span>
+        <span class="icon-select-arrow"></span>
+      </div>
+      <div class="icon-select-items">
+        <!-- itens serão gerados via JS -->
+      </div>
+    </div>
 
     <button onclick="adicionarArquivo()">Salvar Arquivo</button>
     <p id="statusMsg" style="color:lightgreen;"></p>
@@ -131,6 +191,124 @@ const API_URL = "https://script.google.com/macros/s/AKfycbx9ooJfJZb21z0kHPYoNeET
 // Variáveis de controle
 let usuarioLogado = null;
 let projetosPermitidos = [];
+
+// Lista de ícones que vamos mostrar (classe FA e nome amigável)
+const iconesDisponiveis = [
+  {class: "fas fa-file", label: "Arquivo Padrão"},
+  {class: "fas fa-file-pdf", label: "PDF"},
+  {class: "fas fa-image", label: "Imagem"},
+  {class: "fas fa-video", label: "Vídeo"},
+  {class: "fas fa-music", label: "Música"},
+  {class: "fas fa-book", label: "Livro"},
+  {class: "fas fa-file-word", label: "Word"},
+  {class: "fas fa-file-excel", label: "Excel"},
+  {class: "fas fa-file-powerpoint", label: "PowerPoint"},
+  {class: "fas fa-download", label: "Download"},
+  {class: "fas fa-link", label: "Link"},
+  {class: "fas fa-folder", label: "Pasta"},
+  {class: "fas fa-rocket", label: "Foguete"},
+  {class: "fas fa-ship", label: "Navio"},
+];
+
+// Para armazenar ícone selecionado
+let iconeSelecionado = iconesDisponiveis[0];
+
+// Montar seletor customizado
+function montarIconeSelect() {
+  const wrapper = document.getElementById("iconeSelectWrapper");
+  const selected = wrapper.querySelector(".icon-select-selected");
+  const itemsContainer = wrapper.querySelector(".icon-select-items");
+
+  // Criar opções
+  itemsContainer.innerHTML = "";
+  iconesDisponiveis.forEach((ico, i) => {
+    const div = document.createElement("div");
+    div.setAttribute("data-class", ico.class);
+    div.setAttribute("tabindex", "0");
+    div.innerHTML = `<i class="${ico.class}"></i> <span>${ico.label}</span>`;
+    div.addEventListener("click", () => {
+      iconeSelecionado = ico;
+      atualizarIconeSelecionado();
+      fecharDropdown();
+    });
+    div.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        div.click();
+      }
+    });
+    itemsContainer.appendChild(div);
+  });
+
+  // Toggle dropdown
+  selected.onclick = () => {
+    if (itemsContainer.style.display === "block") {
+      fecharDropdown();
+    } else {
+      abrirDropdown();
+    }
+  };
+
+  // Fechar ao clicar fora
+  document.addEventListener("click", (e) => {
+    if (!wrapper.contains(e.target)) {
+      fecharDropdown();
+    }
+  });
+
+  // Acessibilidade com teclado
+  selected.onkeydown = (e) => {
+    if (e.key === "ArrowDown" || e.key === " ") {
+      e.preventDefault();
+      abrirDropdown();
+      const firstItem = itemsContainer.querySelector("div");
+      if (firstItem) firstItem.focus();
+    }
+  };
+
+  itemsContainer.onkeydown = (e) => {
+    const focusable = Array.from(itemsContainer.querySelectorAll("div"));
+    const currentIndex = focusable.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      let next = (currentIndex + 1) % focusable.length;
+      focusable[next].focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      let prev = (currentIndex - 1 + focusable.length) % focusable.length;
+      focusable[prev].focus();
+    } else if (e.key === "Escape") {
+      fecharDropdown();
+      selected.focus();
+    }
+  };
+
+  atualizarIconeSelecionado();
+}
+
+function atualizarIconeSelecionado() {
+  const wrapper = document.getElementById("iconeSelectWrapper");
+  const selected = wrapper.querySelector(".icon-select-selected");
+  const arrow = wrapper.querySelector(".icon-select-arrow");
+  selected.innerHTML = `<i class="${iconeSelecionado.class}"></i> <span>${iconeSelecionado.label}</span>`;
+  selected.appendChild(arrow);
+}
+
+function abrirDropdown() {
+  const wrapper = document.getElementById("iconeSelectWrapper");
+  const itemsContainer = wrapper.querySelector(".icon-select-items");
+  const arrow = wrapper.querySelector(".icon-select-arrow");
+  itemsContainer.style.display = "block";
+  arrow.classList.add("open");
+}
+
+function fecharDropdown() {
+  const wrapper = document.getElementById("iconeSelectWrapper");
+  const itemsContainer = wrapper.querySelector(".icon-select-items");
+  const arrow = wrapper.querySelector(".icon-select-arrow");
+  itemsContainer.style.display = "none";
+  arrow.classList.remove("open");
+}
 
 // FUNÇÃO DE LOGIN
 async function login() {
@@ -206,7 +384,7 @@ async function adicionarArquivo() {
   const projeto = document.getElementById("projetoSelect").value;
   const nome = document.getElementById("nomeArquivo").value.trim();
   const link = document.getElementById("fileLink").value.trim();
-  const icone = document.getElementById("iconeSelect").value || "fas fa-file";
+  const icone = iconeSelecionado.class || "fas fa-file";
 
   if (!nome || !link) {
     document.getElementById("statusMsg").innerText = "Preencha Nome e Link!";
@@ -224,8 +402,8 @@ async function adicionarArquivo() {
     document.getElementById("statusMsg").innerText = "Arquivo adicionado com sucesso!";
     document.getElementById("nomeArquivo").value = "";
     document.getElementById("fileLink").value = "";
-    // Reseta para ícone padrão
-    document.getElementById("iconeSelect").value = "fas fa-file";
+    iconeSelecionado = iconesDisponiveis[0];
+    atualizarIconeSelecionado();
   } else {
     document.getElementById("statusMsg").innerText = "Erro ao adicionar arquivo";
   }
@@ -241,6 +419,8 @@ function logout() {
   document.getElementById("statusMsg").innerText = "";
   document.getElementById("logoProjeto").innerHTML = "";
 }
+
+montarIconeSelect();
 </script>
 
 </body>
