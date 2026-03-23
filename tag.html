@@ -1,5 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexTag</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  background: #1e293b;
+  color: white;
+  display: flex;
+  justify-content: center;
+  padding-top: 40px;
+}
+
+.container {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 25px;
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+}
+
+.btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border: none;
+  border-radius: 8px;
+  background: #334155;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn:hover {
+  background: #1e293b;
+}
+
+#modal {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.8);
+  justify-content:center;
+  align-items:center;
+}
+
+#modal iframe {
+  width:80%;
+  height:80%;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div id="logo"></div>
+  <h1 id="titulo">Carregando...</h1>
+  <p id="descricao"></p>
+  <div id="botoes"></div>
+</div>
+
+<div id="modal">
+  <button onclick="fecharModal()">X</button>
+  <iframe id="frame"></iframe>
+</div>
+
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbyMV4URL5mSkJzKKoMgGSF5OK3ZrAD0_Rj4I7K50gRt9JRqEchLtWz69rJxwNGbUhBBTg/exec";
+const API_URL = "COLE_SUA_URL_AQUI"; // 🔥 IMPORTANTE
 
 function getParametro(nome){
   return new URL(window.location.href).searchParams.get(nome);
@@ -7,88 +86,75 @@ function getParametro(nome){
 
 async function carregar(){
   const id = getParametro("id");
-  if(!id){ 
-    console.error("ID do projeto não informado"); 
-    return; 
+
+  if(!id){
+    alert("ID não informado");
+    return;
   }
 
   try {
-const url = `${API_URL}?action=getProjetoCompleto&id_projeto=${id}`;
-const res = await fetch(url);
-      })
-    });
+    const url = `${API_URL}?action=getProjetoCompleto&id_projeto=${id}`;
 
+    const res = await fetch(url);
     const data = await res.json();
-    console.log("RESPOSTA API:", data);
 
-    if(!data.ok){ 
-      console.error("Erro:", data.erro); 
-      return; 
+    console.log("API:", data);
+
+    if(!data.ok){
+      alert(data.erro);
+      return;
     }
 
-    const projeto = data.projeto || {};
+    const p = data.projeto;
 
-    // TEXTO
-    document.getElementById("titulo").innerText = projeto.nome || "NexTag";
-    document.getElementById("subtitulo").innerText = projeto.descricao || "";
+    document.getElementById("titulo").innerText = p.nome;
+    document.getElementById("descricao").innerText = p.descricao;
 
-    // BACKGROUND
-    if(projeto.background){
-      document.body.style.background = `url('${projeto.background}') no-repeat center/cover`;
+    if(p.logo){
+      document.getElementById("logo").innerHTML = `<img src="${p.logo}" style="max-width:120px">`;
     }
 
-    // LOGO
-    const divLogo = document.getElementById("logoProjeto");
-    if(projeto.logo){
-      divLogo.innerHTML = `<img src="${projeto.logo}" alt="Logo">`;
+    if(p.background){
+      document.body.style.background = `url('${p.background}') center/cover`;
     }
 
-    // BOTÕES
-    montarBotoes(projeto.arquivos || projeto.files || []);
+    montarBotoes(p.arquivos);
 
-  } catch(e){ 
-    console.error("Erro ao carregar projeto:", e); 
+  } catch(e){
+    console.error(e);
+    alert("Erro ao carregar");
   }
 }
 
 function montarBotoes(lista){
-  const container = document.getElementById("botoes");
-  container.innerHTML = "";
+  const div = document.getElementById("botoes");
+  div.innerHTML = "";
 
-  lista.forEach(item=>{
-    const nome = item.nome || item.name || "Arquivo";
-    const icone = item.icone || item.icon || "fa-solid fa-file";
-    const link = item.fileId || item.file_id || item.link || "";
-
-    if(!link){
-      console.warn("Arquivo sem link:", item);
-      return;
-    }
-
+  lista.forEach(a=>{
     const btn = document.createElement("button");
     btn.className = "btn";
-    btn.innerHTML = `<i class="${icone}"></i> ${nome}`;
-    btn.onclick = () => abrirArquivo(link);
-
-    container.appendChild(btn);
+    btn.innerHTML = `<i class="${a.icone}"></i> ${a.nome}`;
+    btn.onclick = ()=>abrir(a.fileId);
+    div.appendChild(btn);
   });
 }
 
-function abrirArquivo(link){
-  if(!link) return;
-
+function abrir(link){
   if(link.includes("preview")){
-    document.getElementById("pdfFrame").src = link;
-    document.getElementById("modal").style.display = "flex";
+    document.getElementById("modal").style.display="flex";
+    document.getElementById("frame").src = link;
   } else {
     window.open(link,"_blank");
   }
 }
 
 function fecharModal(){
-  document.getElementById("modal").style.display = "none";
-  document.getElementById("pdfFrame").src = "";
+  document.getElementById("modal").style.display="none";
+  document.getElementById("frame").src="";
 }
 
 carregar();
 </script>
+
+</body>
+</html>
