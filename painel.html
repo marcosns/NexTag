@@ -4,7 +4,62 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwxJO2tgw06edGo4V_EdB-7
 let usuarioLogado = null;
 let projetosPermitidos = [];
 
-// 🔹 LOGIN (GET)
+// 🔹 ÍCONES
+const iconesDisponiveis = [
+ {class: "fas fa-file", label: "Arquivo Padrão"},
+ {class: "fas fa-file-pdf", label: "PDF"},
+ {class: "fas fa-image", label: "Imagem"},
+ {class: "fas fa-video", label: "Vídeo"},
+ {class: "fas fa-book", label: "Livro"},
+ {class: "fas fa-file-word", label: "Word"},
+ {class: "fas fa-file-excel", label: "Excel"},
+ {class: "fas fa-file-powerpoint", label: "PowerPoint"},
+ {class: "fas fa-download", label: "Download"},
+ {class: "fas fa-link", label: "Link"},
+ {class: "fas fa-folder", label: "Pasta"}
+];
+
+let iconeSelecionado = iconesDisponiveis[0];
+
+// 🔹 SELECT DE ÍCONES
+function montarIconeSelect() {
+  const wrapper = document.getElementById("iconeSelectWrapper");
+  const selected = wrapper.querySelector(".icon-select-selected");
+  const itemsContainer = wrapper.querySelector(".icon-select-items");
+
+  itemsContainer.innerHTML = "";
+
+  iconesDisponiveis.forEach((ico) => {
+    const div = document.createElement("div");
+    div.innerHTML = `<i class="${ico.class}"></i> ${ico.label}`;
+
+    div.onclick = () => {
+      iconeSelecionado = ico;
+      atualizarIconeSelecionado();
+      fecharDropdown();
+    };
+
+    itemsContainer.appendChild(div);
+  });
+
+  selected.onclick = () => {
+    itemsContainer.style.display =
+      itemsContainer.style.display === "block" ? "none" : "block";
+  };
+
+  atualizarIconeSelecionado();
+}
+
+function atualizarIconeSelecionado() {
+  const selected = document.querySelector(".icon-select-selected");
+  selected.innerHTML = `<i class="${iconeSelecionado.class}"></i> ${iconeSelecionado.label}`;
+}
+
+function fecharDropdown() {
+  document.querySelector(".icon-select-items").style.display = "none";
+}
+
+// 🔹 LOGIN (GET - sem CORS)
 async function login() {
   const user = document.getElementById("usuario").value.trim();
   const senha = document.getElementById("senha").value.trim();
@@ -28,7 +83,6 @@ async function login() {
 
       document.getElementById("loginDiv").style.display = "none";
       document.getElementById("painelDiv").style.display = "block";
-      document.getElementById("loginMsg").innerText = "";
 
       preencherProjetos();
     } else {
@@ -41,7 +95,7 @@ async function login() {
   }
 }
 
-// 🔹 PREENCHER PROJETOS
+// 🔹 PROJETOS
 function preencherProjetos() {
   const select = document.getElementById("projetoSelect");
   select.innerHTML = "";
@@ -89,7 +143,7 @@ async function adicionarArquivo() {
   const projeto = document.getElementById("projetoSelect").value;
   const nome = document.getElementById("nomeArquivo").value.trim();
   const link = document.getElementById("fileLink").value.trim();
-  const icone = iconeSelecionado.class || "fas fa-file";
+  const icone = iconeSelecionado.class;
 
   if (!nome || !link) {
     document.getElementById("statusMsg").innerText = "Preencha Nome e Link!";
@@ -134,6 +188,6 @@ function logout() {
   document.getElementById("logoProjeto").innerHTML = "";
 }
 
-// 🔹 INICIALIZA ÍCONES
+// 🔹 INIT
 montarIconeSelect();
 </script>
