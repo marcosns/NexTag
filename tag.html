@@ -1,5 +1,5 @@
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzMHMHWcZRItUH_ew-aSTA825C2zCEtPdoCNkZmxAOWj7cgmoHDWspk9in2x6D2oeYcpg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyMV4URL5mSkJzKKoMgGSF5OK3ZrAD0_Rj4I7K50gRt9JRqEchLtWz69rJxwNGbUhBBTg/exec";
 
 function getParametro(nome){
   return new URL(window.location.href).searchParams.get(nome);
@@ -13,14 +13,8 @@ async function carregar(){
   }
 
   try {
-    const res = await fetch(API_URL,{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ 
-        action:"getProjetoCompleto", 
-        id_projeto:id 
+const url = `${API_URL}?action=getProjetoCompleto&id_projeto=${id}`;
+const res = await fetch(url);
       })
     });
 
