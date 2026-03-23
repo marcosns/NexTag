@@ -21,7 +21,6 @@ body {
   align-items: flex-start;
   padding-top: 30px;
 }
-
 .container {
   background: rgba(255,255,255,0.08);
   backdrop-filter: blur(20px);
@@ -33,18 +32,8 @@ body {
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   text-align: center;
 }
-
-h1, h2 {
-  margin: 10px 0;
-}
-
-#logoProjeto img {
-  max-width: 140px;
-  max-height: 80px;
-  object-fit: contain;
-  margin-bottom: 15px;
-}
-
+h1, h2 { margin: 10px 0; }
+#logoProjeto img { max-width: 140px; max-height: 80px; object-fit: contain; margin-bottom: 15px; }
 .btn {
   width: 100%;
   padding: 12px;
@@ -60,14 +49,8 @@ h1, h2 {
   justify-content: left;
   gap: 10px;
 }
-.btn i {
-  width: 24px;
-  text-align: center;
-}
-.btn:hover {
-  background: #1e293b;
-}
-
+.btn i { width: 24px; text-align: center; }
+.btn:hover { background: #1e293b; }
 #modal {
   display: none;
   position: fixed;
@@ -78,26 +61,11 @@ h1, h2 {
   align-items: center;
   z-index: 999;
 }
-
-#modal iframe {
-  width: 80%;
-  height: 80%;
-  border: none;
-  border-radius: 10px;
-}
-
+#modal iframe { width: 80%; height: 80%; border: none; border-radius: 10px; }
 #modal button {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: #ef4444;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute; top: 20px; right: 20px;
+  background: #ef4444; border-radius: 50%; width: 40px; height: 40px;
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
   cursor: pointer;
 }
 </style>
@@ -108,39 +76,44 @@ h1, h2 {
   <div id="logoProjeto"></div>
   <h1 id="titulo">Projeto NexTag</h1>
   <h2 id="subtitulo"></h2>
-
   <div id="botoes"></div>
 </div>
 
-<!-- Modal para visualizar PDF ou Drive -->
+<!-- Modal -->
 <div id="modal">
   <button onclick="fecharModal()">×</button>
-  <iframe id="pdfFrame" title="Visualizador de Arquivo"></iframe>
+  <iframe id="pdfFrame"></iframe>
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxRUYRiACowD4X9GeIFBkvw-2v73NywdprF4UWHi2_Be5vJ3O1umf7TwQZ681U4m0BIRQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwOy46eJ2OX6OQoF6QN0eAaaswtC5Uf9jH2PQDPDouydG5iga931JsLRHBWxIIJ1kc1/exec";
 
+// Lê parâmetro da URL
 function getParametro(nome){
-  return new URL(window.location.href).searchParams.get(nome);
+  const valor = new URL(window.location.href).searchParams.get(nome);
+  console.log("ID lido da URL:", valor);
+  return valor;
 }
 
+// Carrega projeto
 async function carregar(){
   const id = getParametro("id");
-  if(!id) return;
+  if(!id){
+    alert("ID do projeto não encontrado na URL!");
+    return;
+  }
 
   try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "getProjetoCompleto",
-        id_projeto: id
-      })
+    const res = await fetch(API_URL,{
+      method:"POST",
+      body: JSON.stringify({ action:"getProjetoCompleto", id_projeto: id })
     });
 
     const data = await res.json();
+    console.log("Resposta da API:", data);
+
     if(!data.ok){
-      console.warn("Projeto não encontrado ou erro na resposta.");
+      alert("Projeto não encontrado ou erro na resposta.");
       return;
     }
 
@@ -158,10 +131,10 @@ async function carregar(){
 
     // LOGO
     const logoDiv = document.getElementById("logoProjeto");
-    logoDiv.innerHTML = ""; // limpa anterior
+    logoDiv.innerHTML = '';
     if(projeto.logo){
       logoDiv.insertAdjacentHTML("afterbegin",
-        `<img id="logoProjetoImg" src="${projeto.logo}" alt="Logo do Projeto" />`
+        `<img id="logoProjetoImg" src="${projeto.logo}" alt="Logo do Projeto">`
       );
     }
 
@@ -170,6 +143,7 @@ async function carregar(){
 
   } catch(e){
     console.error("Erro ao carregar projeto:", e);
+    alert("Erro ao acessar API. Veja o console para detalhes.");
   }
 }
 
@@ -200,6 +174,7 @@ function fecharModal(){
   document.getElementById("pdfFrame").src = "";
 }
 
+// Executa ao abrir
 carregar();
 </script>
 
