@@ -1,3 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NexTag - Projeto</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<style>
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #1e293b;
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 30px;
+}
+
+.container {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+h1, h2 {
+  margin: 10px 0;
+}
+
+#logoProjeto img {
+  max-width: 140px;
+  max-height: 80px;
+  object-fit: contain;
+  margin-bottom: 15px;
+}
+
+.btn {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #334155;
+  color: white;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  gap: 10px;
+}
+.btn i {
+  width: 24px;
+  text-align: center;
+}
+.btn:hover {
+  background: #1e293b;
+}
+
+#modal {
+  display: none;
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.8);
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+#modal iframe {
+  width: 80%;
+  height: 80%;
+  border: none;
+  border-radius: 10px;
+}
+
+#modal button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #ef4444;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="container card">
+  <div id="logoProjeto"></div>
+  <h1 id="titulo">Projeto NexTag</h1>
+  <h2 id="subtitulo"></h2>
+
+  <div id="botoes"></div>
+</div>
+
+<!-- Modal para visualizar PDF ou Drive -->
+<div id="modal">
+  <button onclick="fecharModal()">×</button>
+  <iframe id="pdfFrame"></iframe>
+</div>
+
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwd71kM5AydLVQ0fOjxuw9uFBBZO7ATZeaIC5oZM5Eb2-OiGICYJ13foWAzUfF9KOhDdQ/exec";
 
@@ -6,46 +126,51 @@ function getParametro(nome){
 }
 
 async function carregar(){
-
   const id = getParametro("id");
   if(!id) return;
 
-  const res = await fetch(API_URL,{
-    method:"POST",
-    body: JSON.stringify({
-      action:"getProjetoCompleto",
-      id_projeto:id
-    })
-  });
+  try {
+    const res = await fetch(API_URL,{
+      method:"POST",
+      body: JSON.stringify({
+        action:"getProjetoCompleto",
+        id_projeto: id
+      })
+    });
 
-  const data = await res.json();
-  if(!data.ok) return;
+    const data = await res.json();
+    if(!data.ok) return;
 
-  const projeto = data.projeto;
+    const projeto = data.projeto;
 
-  // 🔥 TEXTO
-  document.getElementById("titulo").innerText = projeto.nome || "NexTag";
-  document.getElementById("subtitulo").innerText = projeto.descricao || "";
+    // TEXTO
+    document.getElementById("titulo").innerText = projeto.nome || "NexTag";
+    document.getElementById("subtitulo").innerText = projeto.descricao || "";
 
-  // 🔥 BACKGROUND DINÂMICO
-  if(projeto.background){
-    document.body.style.background = `url('${projeto.background}') no-repeat center/cover`;
+    // BACKGROUND
+    if(projeto.background){
+      document.body.style.background = `url('${projeto.background}') no-repeat center/cover`;
+      document.body.style.backgroundSize = 'cover';
+    }
+
+    // LOGO
+    const card = document.querySelector(".card");
+    if(projeto.logo && card){
+      const antigo = document.getElementById("logoProjeto");
+      if(antigo) antigo.innerHTML = '';
+      antigo.insertAdjacentHTML("afterbegin",
+        `<img id="logoProjetoImg" src="${projeto.logo}" alt="Logo do Projeto">`
+      );
+    }
+
+    // BOTÕES
+    montarBotoes(data.arquivos || []);
+
+  } catch(e){
+    console.error("Erro ao carregar projeto:", e);
   }
-
-  // 🔥 LOGO
-  const card = document.querySelector(".card");
-  if(projeto.logo && card){
-    const antigo = document.getElementById("logoProjeto");
-    if(antigo) antigo.remove();
-    card.insertAdjacentHTML("afterbegin",
-      `<img id="logoProjeto" src="${projeto.logo}" style="width:120px;margin-bottom:15px;">`
-    );
-  }
-
-  montarBotoes(data.arquivos || []);
 }
 
-// 🔥 BOTÕES
 function montarBotoes(lista){
   const container = document.getElementById("botoes");
   container.innerHTML = "";
@@ -59,7 +184,6 @@ function montarBotoes(lista){
   });
 }
 
-// 🔥 ABRIR ARQUIVO
 function abrirArquivo(link){
   if(link.includes("preview")){
     document.getElementById("pdfFrame").src = link;
@@ -74,5 +198,9 @@ function fecharModal(){
   document.getElementById("pdfFrame").src = "";
 }
 
+// Executa carregamento ao abrir a página
 carregar();
 </script>
+
+</body>
+</html>
