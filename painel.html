@@ -2,7 +2,7 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbyecdVMJgL508DIGiU5NHEkJvZDK4XX3K4yVPTjcq140UaabQccx-UvQss8hCKDCUZ-ZQ/exec"
 
 let usuarioLogado = null
-let obrasPermitidas = []
+let projetosPermitidos = []
 let iconeSelecionado = "fas fa-file"
 
 // 🔥 LISTA DE ÍCONES
@@ -48,17 +48,17 @@ async function login(){
 
   if(data.ok){
     usuarioLogado = user
-    obrasPermitidas = data.obras
+    projetosPermitidos = data.projetos
 
     document.getElementById("loginDiv").style.display = "none"
     document.getElementById("painelDiv").style.display = "block"
 
-    preencherObras()
+    preencherProjetos()
     renderizarIcones()
 
-    // 🔥 carregar visual da primeira obra
-    if(obrasPermitidas.length > 0){
-      carregarObra(obrasPermitidas[0])
+    // 🔥 carregar visual do primeiro projeto
+    if(projetosPermitidos.length > 0){
+      carregarProjeto(projetosPermitidos[0])
     }
 
   } else {
@@ -66,50 +66,49 @@ async function login(){
   }
 }
 
-// 🔹 PREENCHER OBRAS
-function preencherObras(){
-  const select = document.getElementById("obraSelect")
+// 🔹 PREENCHER PROJETOS
+function preencherProjetos(){
+  const select = document.getElementById("projetoSelect")
   select.innerHTML = ""
 
-  obrasPermitidas.forEach(o=>{
+  projetosPermitidos.forEach(p=>{
     const opt = document.createElement("option")
-    opt.value = o
-    opt.innerText = o
+    opt.value = p
+    opt.innerText = p
     select.appendChild(opt)
   })
 
-  // 🔥 ao trocar obra
+  // 🔥 ao trocar projeto
   select.onchange = ()=>{
-    carregarObra(select.value)
+    carregarProjeto(select.value)
   }
 }
 
-// 🔥 CARREGAR OBRA (AGORA FUNCIONANDO COM BACKEND NOVO)
-async function carregarObra(id){
+// 🔹 CARREGAR PROJETO
+async function carregarProjeto(id){
 
   const res = await fetch(API_URL,{
     method:"POST",
-    body: JSON.stringify({action:"getObraCompleta", id_obra:id})
+    body: JSON.stringify({action:"getProjetoCompleto", id_projeto:id})
   })
 
   const data = await res.json()
-
   if(!data.ok) return
 
-  const obra = data.obra
+  const projeto = data.projeto
 
   // BACKGROUND
-  if(obra.background){
-    document.body.style.background = `url('${obra.background}') no-repeat center/cover`
+  if(projeto.background){
+    document.body.style.background = `url('${projeto.background}') no-repeat center/cover`
   }
 
   // LOGO (evita duplicar)
-  const antigo = document.getElementById("logoObra")
+  const antigo = document.getElementById("logoProjeto")
   if(antigo) antigo.remove()
 
-  if(obra.logo){
+  if(projeto.logo){
     document.querySelector(".container").insertAdjacentHTML("afterbegin",
-      `<img id="logoObra" src="${obra.logo}" style="width:120px;margin-bottom:15px;">`
+      `<img id="logoProjeto" src="${projeto.logo}" style="width:120px;margin-bottom:15px;">`
     )
   }
 }
@@ -117,7 +116,7 @@ async function carregarObra(id){
 // 🔹 ADICIONAR ARQUIVO
 async function adicionarArquivo(){
 
-  const obra = document.getElementById("obraSelect").value
+  const projeto = document.getElementById("projetoSelect").value
   const nome = document.getElementById("nomeArquivo").value
   const link = document.getElementById("fileLink").value.trim()
 
@@ -131,7 +130,7 @@ async function adicionarArquivo(){
     body: JSON.stringify({
       action:"addArquivo",
       usuario:usuarioLogado,
-      obra,
+      projeto,
       nome,
       link,
       icone: iconeSelecionado
@@ -142,7 +141,6 @@ async function adicionarArquivo(){
 
   if(data.ok){
     document.getElementById("statusMsg").innerText = "Arquivo adicionado com sucesso!"
-
     document.getElementById("nomeArquivo").value=""
     document.getElementById("fileLink").value=""
   } else {
@@ -153,7 +151,7 @@ async function adicionarArquivo(){
 // 🔹 LOGOUT
 function logout(){
   usuarioLogado = null
-  obrasPermitidas = []
+  projetosPermitidos = []
 
   document.getElementById("loginDiv").style.display = "block"
   document.getElementById("painelDiv").style.display = "none"
