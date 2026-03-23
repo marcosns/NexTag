@@ -13,8 +13,8 @@ async function carregar(){
   const res = await fetch(API_URL,{
     method:"POST",
     body: JSON.stringify({
-      action:"getObraCompleta",
-      id_obra:id
+      action:"getprojetoCompleta",
+      id_projeto:id
     })
   })
 
@@ -22,21 +22,21 @@ async function carregar(){
 
   if(!data.ok) return
 
-  const obra = data.obra
+  const projeto = data.projeto
 
   // 🔥 TEXTO
-  document.getElementById("titulo").innerText = obra.nome || "NexTag"
-  document.getElementById("subtitulo").innerText = obra.descricao || ""
+  document.getElementById("titulo").innerText = projeto.nome || "NexTag"
+  document.getElementById("subtitulo").innerText = projeto.descricao || ""
 
   // 🔥 BACKGROUND DINÂMICO
-  if(obra.background){
-    document.body.style.background = `url('${obra.background}') no-repeat center/cover`
+  if(projeto.background){
+    document.body.style.background = `url('${projeto.background}') no-repeat center/cover`
   }
 
   // 🔥 LOGO
-  if(obra.logo){
+  if(projeto.logo){
     document.querySelector(".card").insertAdjacentHTML("afterbegin",
-      `<img id="logoObra" src="${obra.logo}" style="width:120px;margin-bottom:15px;">`
+      `<img id="logoprojeto" src="${projetologo}" style="width:120px;margin-bottom:15px;">`
     )
   }
 
