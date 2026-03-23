@@ -21,6 +21,7 @@ body {
   align-items: flex-start;
   padding-top: 30px;
 }
+
 .container {
   background: rgba(255,255,255,0.08);
   backdrop-filter: blur(20px);
@@ -32,8 +33,18 @@ body {
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   text-align: center;
 }
-h1, h2 { margin: 10px 0; }
-#logoProjeto img { max-width: 140px; max-height: 80px; object-fit: contain; margin-bottom: 15px; }
+
+h1, h2 {
+  margin: 10px 0;
+}
+
+#logoProjeto img {
+  max-width: 140px;
+  max-height: 80px;
+  object-fit: contain;
+  margin-bottom: 15px;
+}
+
 .btn {
   width: 100%;
   padding: 12px;
@@ -49,8 +60,14 @@ h1, h2 { margin: 10px 0; }
   justify-content: left;
   gap: 10px;
 }
-.btn i { width: 24px; text-align: center; }
-.btn:hover { background: #1e293b; }
+.btn i {
+  width: 24px;
+  text-align: center;
+}
+.btn:hover {
+  background: #1e293b;
+}
+
 #modal {
   display: none;
   position: fixed;
@@ -61,11 +78,24 @@ h1, h2 { margin: 10px 0; }
   align-items: center;
   z-index: 999;
 }
-#modal iframe { width: 80%; height: 80%; border: none; border-radius: 10px; }
+#modal iframe {
+  width: 80%;
+  height: 80%;
+  border: none;
+  border-radius: 10px;
+}
 #modal button {
-  position: absolute; top: 20px; right: 20px;
-  background: #ef4444; border-radius: 50%; width: 40px; height: 40px;
-  font-size: 18px; display: flex; align-items: center; justify-content: center;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #ef4444;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 </style>
@@ -86,34 +116,32 @@ h1, h2 { margin: 10px 0; }
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwIf8fNnBnkA2eioH9irrlD7lHR_fkceXQWCnk5_wbsSLov3IIvw3KSWG3JNKbpIarp4A/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzKHo2qSNPvXp-UmX0YRPebTLCFtIw7zypCdCNfkbIQvhz0_LIDV3mdGJ_kTPwLE6fXaw/exec";
 
-// Lê parâmetro da URL
 function getParametro(nome){
-  const valor = new URL(window.location.href).searchParams.get(nome);
-  console.log("ID lido da URL:", valor);
-  return valor;
+  return new URL(window.location.href).searchParams.get(nome);
 }
 
-// Carrega projeto
 async function carregar(){
   const id = getParametro("id");
   if(!id){
-    alert("ID do projeto não encontrado na URL!");
+    console.error("ID do projeto não fornecido na URL");
     return;
   }
 
   try {
     const res = await fetch(API_URL,{
       method:"POST",
-      body: JSON.stringify({ action:"getProjetoCompleto", id_projeto: id })
+      body: JSON.stringify({
+        action:"getProjetoCompleto",
+        id_projeto: id
+      })
     });
 
     const data = await res.json();
-    console.log("Resposta da API:", data);
-
     if(!data.ok){
-      alert("Projeto não encontrado ou erro na resposta.");
+      console.error("Projeto não encontrado ou erro na resposta:", data.erro);
+      alert("Projeto não encontrado!");
       return;
     }
 
@@ -130,12 +158,10 @@ async function carregar(){
     }
 
     // LOGO
-    const logoDiv = document.getElementById("logoProjeto");
-    logoDiv.innerHTML = '';
+    const divLogo = document.getElementById("logoProjeto");
+    divLogo.innerHTML = '';
     if(projeto.logo){
-      logoDiv.insertAdjacentHTML("afterbegin",
-        `<img id="logoProjetoImg" src="${projeto.logo}" alt="Logo do Projeto">`
-      );
+      divLogo.innerHTML = `<img id="logoProjetoImg" src="${projeto.logo}" alt="Logo do Projeto">`;
     }
 
     // BOTÕES
@@ -143,7 +169,6 @@ async function carregar(){
 
   } catch(e){
     console.error("Erro ao carregar projeto:", e);
-    alert("Erro ao acessar API. Veja o console para detalhes.");
   }
 }
 
@@ -174,7 +199,7 @@ function fecharModal(){
   document.getElementById("pdfFrame").src = "";
 }
 
-// Executa ao abrir
+// Carrega ao abrir
 carregar();
 </script>
 
