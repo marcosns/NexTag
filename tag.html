@@ -1,84 +1,123 @@
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxG9FD61htdo2tM0LlPvpi_LTiMcZpt4d1ajgXFi9AajRkzZMyZe7xGa0RHadZuGfaKtw/exec"; // 🔥 coloque sua URL real
+const API_URL = "https://script.google.com/macros/s/AKfycbxmQa-AE_805l6wxLMN5zN4W8IQbQka2c-AhYHXk0ZeDko74e0fjMN_mDFFXSLPGkpB8Q/exec";
 
+// 🔹 PEGAR PARÂMETRO
 function getParametro(nome){
   return new URL(window.location.href).searchParams.get(nome);
 }
 
+// 🔹 LOADING
+function setLoading(msg="Carregando..."){
+  document.getElementById("titulo").innerText = msg;
+}
+
+// 🔹 CARREGAR DADOS
 async function carregar(){
   const id = getParametro("id");
 
   if(!id){
-    alert("ID não informado");
+    setLoading("ID não informado");
     return;
   }
+
+  setLoading("Carregando projeto...");
 
   try {
     const url = `${API_URL}?action=getProjetoCompleto&id_projeto=${id}`;
 
+    console.log("URL:", url);
+
     const res = await fetch(url);
+
+    if(!res.ok){
+      throw new Error("Erro HTTP: " + res.status);
+    }
+
     const data = await res.json();
 
     console.log("API:", data);
 
     if(!data.ok){
-      alert(data.erro);
+      setLoading(data.erro || "Erro ao carregar");
       return;
     }
 
-    const p = data.projeto;
+    const p = data.projeto || {};
 
-    document.getElementById("titulo").innerText = p.nome;
-    document.getElementById("descricao").innerText = p.descricao;
+    // 🔹 TEXTO
+    document.getElementById("titulo").innerText = p.nome || "Sem nome";
+    document.getElementById("descricao").innerText = p.descricao || "";
 
+    // 🔹 LOGO
     if(p.logo){
       document.getElementById("logo").innerHTML =
         `<img src="${p.logo}" style="max-width:120px">`;
     }
 
+    // 🔹 BACKGROUND
     if(p.background){
       document.body.style.background =
-        `url('${p.background}') center/cover`;
+        `url('${p.background}') center/cover no-repeat`;
     }
 
-    montarBotoes(p.arquivos);
+    // 🔹 BOTÕES
+    montarBotoes(p.arquivos || []);
 
   } catch(e){
-    console.error(e);
-    alert("Erro ao carregar");
+    console.error("Erro:", e);
+    setLoading("Erro ao carregar projeto");
   }
 }
 
+// 🔹 BOTÕES
 function montarBotoes(lista){
   const div = document.getElementById("botoes");
   div.innerHTML = "";
 
+  if(!lista.length){
+    div.innerHTML = "<p>Nenhum arquivo disponível</p>";
+    return;
+  }
+
   lista.forEach(a=>{
+    const nome = a.nome || "Arquivo";
+    const icone = a.icone || "fas fa-file";
+    const link = a.fileId || "";
+
     const btn = document.createElement("button");
     btn.className = "btn";
-    btn.innerHTML = `<i class="${a.icone}"></i> ${a.nome}`;
+    btn.innerHTML = `<i class="${icone}"></i> ${nome}`;
 
-    btn.onclick = ()=>abrir(a.fileId);
+    btn.onclick = ()=>abrir(link);
 
     div.appendChild(btn);
   });
 }
 
+// 🔹 ABRIR ARQUIVO
 function abrir(link){
-  if(!link) return;
+  if(!link){
+    alert("Arquivo inválido");
+    return;
+  }
 
+  // PDF preview
   if(link.includes("preview")){
     document.getElementById("modal").style.display="flex";
     document.getElementById("frame").src = link;
-  } else {
+  } 
+  // Outros links
+  else {
     window.open(link,"_blank");
   }
 }
 
+// 🔹 FECHAR MODAL
 function fecharModal(){
   document.getElementById("modal").style.display="none";
   document.getElementById("frame").src="";
 }
 
+// 🔹 INIT
 carregar();
 </script>
