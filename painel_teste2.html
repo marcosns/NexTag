@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel NexTag</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',sans-serif;background:#0f172a;color:white;display:flex;justify-content:center;align-items:center;height:100vh;}
+.container{background:rgba(255,255,255,0.05);padding:30px;border-radius:20px;width:90%;max-width:400px;}
+input, select{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:none;}
+button{width:100%;padding:12px;background:#1e293b;color:white;border:none;border-radius:8px;cursor:pointer;margin-top:10px;}
+button:hover{background:#334155;}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Painel NexTag</h2>
+
+<div id="loginDiv">
+  <input type="text" id="usuario" placeholder="Usuário">
+  <input type="password" id="senha" placeholder="Senha">
+  <button onclick="login()">Entrar</button>
+  <p id="loginMsg" style="color:red;"></p>
+</div>
+
+<div id="painelDiv" style="display:none;">
+  <h3>Adicionar Arquivo</h3>
+  <label>Obra:</label>
+  <select id="obraSelect"></select>
+  <input type="text" id="nomeArquivo" placeholder="Nome do Arquivo">
+  <input type="text" id="fileId" placeholder="ID do Google Drive">
+  <input type="text" id="icone" placeholder="Ícone Font Awesome">
+  <button onclick="adicionarArquivo()">Salvar Arquivo</button>
+  <p id="statusMsg" style="color:lightgreen;"></p>
+  <button onclick="logout()">Sair</button>
+</div>
+
+<script>
+const API_URL = "COLE_SUA_URL_DO_APPS_SCRIPT"
+
+// Login simples
+let usuarioLogado = null
+let obrasPermitidas = []
+
+async function login(){
+  const user = document.getElementById("usuario").value
+  const senha = document.getElementById("senha").value
+
+  const res = await fetch(API_URL,{
+    method:"POST",
+    body: JSON.stringify({action:"login", usuario:user, senha:senha})
+  })
+
+  const data = await res.json()
+
+  if(data.ok){
+    usuarioLogado = user
+    obrasPermitidas = data.obras
+    document.getElementById("loginDiv").style.display = "none"
+    document.getElementById("painelDiv").style.display = "block"
+    preencherObras()
+  } else {
+    document.getElementById("loginMsg").innerText = "Usuário ou senha incorretos"
+  }
+}
+
+function preencherObras(){
+  const select = document.getElementById("obraSelect")
+  select.innerHTML = ""
+  obrasPermitidas.forEach(o=>{
+    const opt = document.createElement("option")
+    opt.value = o
+    opt.innerText = o
+    select.appendChild(opt)
+  })
+}
+
+async function adicionarArquivo(){
+  const obra = document.getElementById("obraSelect").value
+  const nome = document.getElementById("nomeArquivo").value
+  const fileId = document.getElementById("fileId").value
+  const icone = document.getElementById("icone").value || "fas fa-file"
+
+  const res = await fetch(API_URL,{
+    method:"POST",
+    body: JSON.stringify({action:"addArquivo", usuario:usuarioLogado, obra:obra, nome:nome, fileId:fileId, icone:icone})
+  })
+
+  const data = await res.json()
+
+  if(data.ok){
+    document.getElementById("statusMsg").innerText = "Arquivo adicionado com sucesso!"
+  } else {
+    document.getElementById("statusMsg").innerText = "Erro ao adicionar arquivo"
+  }
+}
+
+function logout(){
+  usuarioLogado = null
+  obrasPermitidas = []
+  document.getElementById("loginDiv").style.display = "block"
+  document.getElementById("painelDiv").style.display = "none"
+}
+</script>
+
+</body>
+</html>
