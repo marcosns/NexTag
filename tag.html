@@ -1,92 +1,78 @@
 <script>
+const API_URL = "https://script.google.com/macros/s/AKfycbxQsYFZJ99VMM3vBCDgXeLZfwSnIQwaTmKPV2F5jenVQediVfj21bjOfTrguTFuOlFM8w/exec";
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxQsYFZJ99VMM3vBCDgXeLZfwSnIQwaTmKPV2F5jenVQediVfj21bjOfTrguTFuOlFM8w/exec"
-  
 function getParametro(nome){
-  return new URL(window.location.href).searchParams.get(nome)
+  return new URL(window.location.href).searchParams.get(nome);
 }
 
 async function carregar(){
 
-  const id = getParametro("id")
+  const id = getParametro("id");
+  if(!id) return;
 
   const res = await fetch(API_URL,{
     method:"POST",
     body: JSON.stringify({
-      action:"getprojetoCompleta",
+      action:"getProjetoCompleto",
       id_projeto:id
     })
-  })
+  });
 
-  const data = await res.json()
+  const data = await res.json();
+  if(!data.ok) return;
 
-  if(!data.ok) return
-
-  const projeto = data.projeto
+  const projeto = data.projeto;
 
   // 🔥 TEXTO
-  document.getElementById("titulo").innerText = projeto.nome || "NexTag"
-  document.getElementById("subtitulo").innerText = projeto.descricao || ""
+  document.getElementById("titulo").innerText = projeto.nome || "NexTag";
+  document.getElementById("subtitulo").innerText = projeto.descricao || "";
 
   // 🔥 BACKGROUND DINÂMICO
   if(projeto.background){
-    document.body.style.background = `url('${projeto.background}') no-repeat center/cover`
+    document.body.style.background = `url('${projeto.background}') no-repeat center/cover`;
   }
 
   // 🔥 LOGO
-  if(projeto.logo){
-    document.querySelector(".card").insertAdjacentHTML("afterbegin",
-      `<img id="logoprojeto" src="${projetologo}" style="width:120px;margin-bottom:15px;">`
-    )
+  const card = document.querySelector(".card");
+  if(projeto.logo && card){
+    const antigo = document.getElementById("logoProjeto");
+    if(antigo) antigo.remove();
+    card.insertAdjacentHTML("afterbegin",
+      `<img id="logoProjeto" src="${projeto.logo}" style="width:120px;margin-bottom:15px;">`
+    );
   }
 
-  montarBotoes(data.arquivos || [])
+  montarBotoes(data.arquivos || []);
 }
-
 
 // 🔥 BOTÕES
 function montarBotoes(lista){
-
-  const container = document.getElementById("botoes")
-  container.innerHTML = ""
+  const container = document.getElementById("botoes");
+  container.innerHTML = "";
 
   lista.forEach(item => {
-
-    const btn = document.createElement("button")
-    btn.className = "btn"
-
-    btn.innerHTML = `<i class="${item.icone}"></i> ${item.nome}`
-
-    // 🔥 AGORA USA LINK DIRETO (não só drive)
-    btn.onclick = () => abrirArquivo(item.fileId)
-
-    container.appendChild(btn)
-
-  })
-
+    const btn = document.createElement("button");
+    btn.className = "btn";
+    btn.innerHTML = `<i class="${item.icone}"></i> ${item.nome}`;
+    btn.onclick = () => abrirArquivo(item.fileId);
+    container.appendChild(btn);
+  });
 }
 
-
-// 🔥 ABRIR ARQUIVO (INTELIGENTE)
+// 🔥 ABRIR ARQUIVO
 function abrirArquivo(link){
-
-  // Se for embed (drive preview)
   if(link.includes("preview")){
-    document.getElementById("pdfFrame").src = link
-    document.getElementById("modal").style.display = "flex"
-  } 
-  else {
-    // abre externo (OneDrive, SharePoint, etc)
-    window.open(link, "_blank")
+    document.getElementById("pdfFrame").src = link;
+    document.getElementById("modal").style.display = "flex";
+  } else {
+    window.open(link, "_blank");
   }
-
 }
 
 function fecharModal(){
-  document.getElementById("modal").style.display = "none"
-  document.getElementById("pdfFrame").src = ""
+  document.getElementById("modal").style.display = "none";
+  document.getElementById("pdfFrame").src = "";
 }
 
-carregar()
-
+carregar();
 </script>
