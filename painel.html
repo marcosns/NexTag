@@ -69,19 +69,30 @@ function salvar(){
   const nome = document.getElementById("nomeArquivo").value;
   const link = document.getElementById("fileLink").value;
 
-  chamarAPI({
-    action: "addArquivo",
-    projeto,
-    nome,
-    link
-  }, function(data){
+  function chamarAPI(params, callback){
 
-    if(data.ok){
-      document.getElementById("statusMsg").innerText = "Salvo!";
-    }else{
-      document.getElementById("statusMsg").innerText = data.erro;
-    }
+  const callbackName = "cb_" + Date.now();
 
+  window[callbackName] = function(data){
+    console.log("RETORNO:", data);
+    callback(data);
+
+    // limpa callback
+    delete window[callbackName];
+  };
+
+  const query = new URLSearchParams(params).toString();
+
+  const script = document.createElement("script");
+
+  // 🔥 CORREÇÃO AQUI (nocache)
+  script.src = `${API_URL}?${query}&callback=${callbackName}&nocache=${Date.now()}`;
+
+  // 🔥 remove script antigo depois de usar
+  script.onload = () => script.remove();
+
+  document.body.appendChild(script);
+}
   });
 }
 </script>
