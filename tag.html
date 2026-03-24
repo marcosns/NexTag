@@ -18,6 +18,7 @@ body{
   justify-content:center;
   align-items:flex-start;
   padding:30px 10px;
+
   background-color:#0f172a;
   background-repeat:no-repeat;
   background-size:cover;
@@ -25,8 +26,19 @@ body{
   background-attachment:fixed;
 }
 
+/* overlay escuro */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.55);
+  z-index:-1;
+}
+
 /* efeito vidro */
 .card{
+  position:relative;
+  z-index:1;
   background:rgba(255,255,255,0.08);
   backdrop-filter:blur(20px);
   -webkit-backdrop-filter:blur(20px);
@@ -156,19 +168,43 @@ async function carregar(){
 
     const p = data.projeto;
 
+    console.log("Projeto:", p);
+    console.log("Logo:", p.logo);
+    console.log("Background:", p.background);
+
     // textos
     document.getElementById("titulo").innerText = p.nome;
     document.getElementById("descricao").innerText = p.descricao;
 
-    // background
+    // 🔥 background seguro
     if(p.background){
-      document.body.style.backgroundImage = `url('${p.background}')`;
+      const bg = new Image();
+
+      bg.onload = () => {
+        document.body.style.backgroundImage = `url('${p.background}')`;
+      };
+
+      bg.onerror = () => {
+        console.error("Erro ao carregar background:", p.background);
+      };
+
+      bg.src = p.background;
     }
 
-    // logo
+    // 🔥 logo seguro
     if(p.logo){
-      document.getElementById("logo").innerHTML =
-        `<img src="${p.logo}">`;
+      const img = new Image();
+
+      img.onload = () => {
+        document.getElementById("logo").innerHTML = "";
+        document.getElementById("logo").appendChild(img);
+      };
+
+      img.onerror = () => {
+        console.error("Erro ao carregar logo:", p.logo);
+      };
+
+      img.src = p.logo;
     }
 
     // arquivos
@@ -204,7 +240,7 @@ function abrir(link){
 
   if(!link) return;
 
-  if(link.includes("preview")){
+  if(link.includes("drive.google.com")){
     document.getElementById("modal").style.display="flex";
     document.getElementById("frame").src = link;
   }else{
