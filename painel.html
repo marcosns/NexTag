@@ -1,9 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Painel NexTag</title>
+</head>
+
+<body style="background:#0f1b2a; color:#fff; font-family:Arial; display:flex; justify-content:center; align-items:center; height:100vh;">
+
+<!-- LOGIN -->
+<div id="loginDiv">
+  <h2>Login</h2>
+  <input id="usuario" placeholder="Usuário"><br><br>
+  <input id="senha" type="password" placeholder="Senha"><br><br>
+  <button onclick="login()">Entrar</button>
+  <p id="loginMsg"></p>
+</div>
+
+<!-- PAINEL -->
+<div id="painelDiv" style="display:none;">
+  <h2>Painel</h2>
+
+  <select id="projetoSelect"></select><br><br>
+
+  <input id="nomeArquivo" placeholder="Nome"><br><br>
+  <input id="fileLink" placeholder="Link"><br><br>
+
+  <button onclick="salvar()">Salvar</button>
+
+  <p id="statusMsg"></p>
+</div>
+
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbxtkJsDc3QlGJvGd9BdwSkK7KrS1ZDA2zaED8rmLZJD7KVaB2Ru32lAAFUGkO3x7KW7vg/exec";
 
 let projetosPermitidos = [];
 
-// ✅ JSONP (CORRIGIDO + NO CACHE)
 function chamarAPI(params, callback){
 
   const callbackName = "cb_" + Date.now();
@@ -17,17 +48,12 @@ function chamarAPI(params, callback){
   const query = new URLSearchParams(params).toString();
 
   const script = document.createElement("script");
-
-  // 🔥 evita cache + resolve tela branca
   script.src = `${API_URL}?${query}&callback=${callbackName}&nocache=${Date.now()}`;
-
-  // 🔥 remove script depois de usar
   script.onload = () => script.remove();
 
   document.body.appendChild(script);
 }
 
-// ✅ LOGIN
 function login(){
 
   const usuario = document.getElementById("usuario").value;
@@ -53,7 +79,6 @@ function login(){
   });
 }
 
-// ✅ CARREGAR PROJETOS
 function carregarProjetos(){
 
   const select = document.getElementById("projetoSelect");
@@ -67,7 +92,6 @@ function carregarProjetos(){
   });
 }
 
-// ✅ SALVAR
 function salvar(){
 
   const projeto = document.getElementById("projetoSelect").value;
@@ -90,3 +114,6 @@ function salvar(){
   });
 }
 </script>
+
+</body>
+</html>
