@@ -23,7 +23,7 @@ body{
   width:300px;
 }
 
-input, button{
+input, button, select{
   width:100%;
   padding:10px;
   margin:5px 0;
@@ -55,25 +55,19 @@ input, button{
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxXgt7yBYWeyBXfRWYOL-2lJIvIbp1x_-sAcB56QxBbB6oH71iY7d2XHjFbGXa88mQ92g/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzN0gXeXT-kbHhXioO0lyHUALzPeROi-DhMeN5zOLpMoPxETlHzq0gKT9tl8tZPdPLwuA/exec";
 
 let projetosPermitidos = [];
 
-// 🔹 LOGIN
+// 🔹 LOGIN (GET - SEM CORS)
 async function login(){
 
   const usuario = document.getElementById("usuario").value;
   const senha = document.getElementById("senha").value;
 
-  const res = await fetch(API_URL,{
-    method:"POST",
-    body: JSON.stringify({
-      action:"login",
-      usuario,
-      senha
-    })
-  });
+  const url = `${API_URL}?action=login&usuario=${encodeURIComponent(usuario)}&senha=${encodeURIComponent(senha)}`;
 
+  const res = await fetch(url);
   const data = await res.json();
 
   if(data.ok){
@@ -83,7 +77,6 @@ async function login(){
     document.getElementById("painelDiv").style.display="block";
 
     carregarProjetos();
-
   }else{
     document.getElementById("loginMsg").innerText = data.erro;
   }
@@ -102,23 +95,16 @@ function carregarProjetos(){
   });
 }
 
-// 🔹 salvar arquivo
+// 🔹 salvar arquivo (GET)
 async function salvar(){
 
   const projeto = document.getElementById("projetoSelect").value;
   const nome = document.getElementById("nomeArquivo").value;
   const link = document.getElementById("fileLink").value;
 
-  const res = await fetch(API_URL,{
-    method:"POST",
-    body: JSON.stringify({
-      action:"addArquivo",
-      projeto,
-      nome,
-      link
-    })
-  });
+  const url = `${API_URL}?action=addArquivo&projeto=${encodeURIComponent(projeto)}&nome=${encodeURIComponent(nome)}&link=${encodeURIComponent(link)}`;
 
+  const res = await fetch(url);
   const data = await res.json();
 
   if(data.ok){
