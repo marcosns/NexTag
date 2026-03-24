@@ -3,7 +3,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxtkJsDc3QlGJvGd9BdwSkK
 
 let projetosPermitidos = [];
 
-// JSONP
+// ✅ JSONP (CORRIGIDO + NO CACHE)
 function chamarAPI(params, callback){
 
   const callbackName = "cb_" + Date.now();
@@ -17,12 +17,17 @@ function chamarAPI(params, callback){
   const query = new URLSearchParams(params).toString();
 
   const script = document.createElement("script");
-  script.src = `${API_URL}?${query}&callback=${callbackName}`;
+
+  // 🔥 evita cache + resolve tela branca
+  script.src = `${API_URL}?${query}&callback=${callbackName}&nocache=${Date.now()}`;
+
+  // 🔥 remove script depois de usar
+  script.onload = () => script.remove();
 
   document.body.appendChild(script);
 }
 
-// LOGIN
+// ✅ LOGIN
 function login(){
 
   const usuario = document.getElementById("usuario").value;
@@ -48,7 +53,7 @@ function login(){
   });
 }
 
-// CARREGAR PROJETOS
+// ✅ CARREGAR PROJETOS
 function carregarProjetos(){
 
   const select = document.getElementById("projetoSelect");
@@ -62,37 +67,26 @@ function carregarProjetos(){
   });
 }
 
-// SALVAR
+// ✅ SALVAR
 function salvar(){
 
   const projeto = document.getElementById("projetoSelect").value;
   const nome = document.getElementById("nomeArquivo").value;
   const link = document.getElementById("fileLink").value;
 
-  function chamarAPI(params, callback){
+  chamarAPI({
+    action: "addArquivo",
+    projeto,
+    nome,
+    link
+  }, function(data){
 
-  const callbackName = "cb_" + Date.now();
+    if(data.ok){
+      document.getElementById("statusMsg").innerText = "Salvo!";
+    }else{
+      document.getElementById("statusMsg").innerText = data.erro;
+    }
 
-  window[callbackName] = function(data){
-    console.log("RETORNO:", data);
-    callback(data);
-
-    // limpa callback
-    delete window[callbackName];
-  };
-
-  const query = new URLSearchParams(params).toString();
-
-  const script = document.createElement("script");
-
-  // 🔥 CORREÇÃO AQUI (nocache)
-  script.src = `${API_URL}?${query}&callback=${callbackName}&nocache=${Date.now()}`;
-
-  // 🔥 remove script antigo depois de usar
-  script.onload = () => script.remove();
-
-  document.body.appendChild(script);
-}
   });
 }
 </script>
