@@ -1,69 +1,15 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel NexTag</title>
-
-<style>
-body{
-  font-family:Arial;
-  background:#0f172a;
-  color:white;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-
-.card{
-  background:#1e293b;
-  padding:20px;
-  border-radius:10px;
-  width:300px;
-}
-
-input, button, select{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-}
-</style>
-</head>
-
-<body>
-
-<div class="card" id="loginDiv">
-  <h3>Login</h3>
-  <input id="usuario" placeholder="Usuário">
-  <input id="senha" type="password" placeholder="Senha">
-  <button onclick="login()">Entrar</button>
-  <p id="loginMsg"></p>
-</div>
-
-<div class="card" id="painelDiv" style="display:none;">
-  <h3>Painel</h3>
-
-  <select id="projetoSelect"></select>
-
-  <input id="nomeArquivo" placeholder="Nome do arquivo">
-  <input id="fileLink" placeholder="Link do arquivo">
-
-  <button onclick="salvar()">Adicionar</button>
-
-  <p id="statusMsg"></p>
-</div>
-
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbx3MB7aKjrvDpcg3h7p4bkvsoZ4TcGoH_ihW5YFBbgvPaSQy7F3egms4mXU_BJFoDd5Bw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxtkJsDc3QlGJvGd9BdwSkK7KrS1ZDA2zaED8rmLZJD7KVaB2Ru32lAAFUGkO3x7KW7vg/exec";
 
 let projetosPermitidos = [];
 
+// JSONP
 function chamarAPI(params, callback){
 
   const callbackName = "cb_" + Date.now();
 
   window[callbackName] = function(data){
+    console.log("RETORNO:", data);
     callback(data);
     delete window[callbackName];
   };
@@ -76,6 +22,7 @@ function chamarAPI(params, callback){
   document.body.appendChild(script);
 }
 
+// LOGIN
 function login(){
 
   const usuario = document.getElementById("usuario").value;
@@ -101,6 +48,7 @@ function login(){
   });
 }
 
+// CARREGAR PROJETOS
 function carregarProjetos(){
 
   const select = document.getElementById("projetoSelect");
@@ -114,6 +62,7 @@ function carregarProjetos(){
   });
 }
 
+// SALVAR
 function salvar(){
 
   const projeto = document.getElementById("projetoSelect").value;
@@ -136,6 +85,3 @@ function salvar(){
   });
 }
 </script>
-
-</body>
-</html>
