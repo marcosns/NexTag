@@ -1,5 +1,5 @@
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzN0gXeXT-kbHhXioO0lyHUALzPeROi-DhMeN5zOLpMoPxETlHzq0gKT9tl8tZPdPLwuA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx3MB7aKjrvDpcg3h7p4bkvsoZ4TcGoH_ihW5YFBbgvPaSQy7F3egms4mXU_BJFoDd5Bw/exec";
 
 let projetosPermitidos = [];
 
@@ -15,17 +15,33 @@ function chamarAPI(params, callbackName){
   document.body.appendChild(script);
 }
 
-// 🔹 LOGIN
 function login(){
 
   const usuario = document.getElementById("usuario").value;
   const senha = document.getElementById("senha").value;
 
-  chamarAPI({
-    action:"login",
-    usuario,
-    senha
-  }, "respostaLogin");
+  const callbackName = "cb_login_" + Date.now();
+
+  window[callbackName] = function(data){
+
+    if(data.ok){
+      projetosPermitidos = data.projetos;
+
+      document.getElementById("loginDiv").style.display="none";
+      document.getElementById("painelDiv").style.display="block";
+
+      carregarProjetos();
+    }else{
+      document.getElementById("loginMsg").innerText = data.erro;
+    }
+
+    delete window[callbackName];
+  };
+
+  const script = document.createElement("script");
+  script.src = `${API_URL}?action=login&usuario=${encodeURIComponent(usuario)}&senha=${encodeURIComponent(senha)}&callback=${callbackName}`;
+
+  document.body.appendChild(script);
 }
 
 // 🔹 CALLBACK LOGIN
@@ -64,12 +80,23 @@ function salvar(){
   const nome = document.getElementById("nomeArquivo").value;
   const link = document.getElementById("fileLink").value;
 
-  chamarAPI({
-    action:"addArquivo",
-    projeto,
-    nome,
-    link
-  }, "respostaSalvar");
+  const callbackName = "cb_save_" + Date.now();
+
+  window[callbackName] = function(data){
+
+    if(data.ok){
+      document.getElementById("statusMsg").innerText="Salvo!";
+    }else{
+      document.getElementById("statusMsg").innerText=data.erro;
+    }
+
+    delete window[callbackName];
+  };
+
+  const script = document.createElement("script");
+  script.src = `${API_URL}?action=addArquivo&projeto=${encodeURIComponent(projeto)}&nome=${encodeURIComponent(nome)}&link=${encodeURIComponent(link)}&callback=${callbackName}`;
+
+  document.body.appendChild(script);
 }
 
 // 🔹 CALLBACK SALVAR
