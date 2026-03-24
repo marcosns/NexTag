@@ -1,74 +1,35 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel NexTag</title>
-
-<style>
-body{
-  font-family:Arial;
-  background:#0f172a;
-  color:white;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-
-.card{
-  background:#1e293b;
-  padding:20px;
-  border-radius:10px;
-  width:300px;
-}
-
-input, button, select{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-}
-</style>
-</head>
-
-<body>
-
-<div class="card" id="loginDiv">
-  <h3>Login</h3>
-  <input id="usuario" placeholder="Usuário">
-  <input id="senha" type="password" placeholder="Senha">
-  <button onclick="login()">Entrar</button>
-  <p id="loginMsg"></p>
-</div>
-
-<div class="card" id="painelDiv" style="display:none;">
-  <h3>Painel</h3>
-
-  <select id="projetoSelect"></select>
-
-  <input id="nomeArquivo" placeholder="Nome do arquivo">
-  <input id="fileLink" placeholder="Link do arquivo">
-
-  <button onclick="salvar()">Adicionar</button>
-
-  <p id="statusMsg"></p>
-</div>
-
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzN0gXeXT-kbHhXioO0lyHUALzPeROi-DhMeN5zOLpMoPxETlHzq0gKT9tl8tZPdPLwuA/exec";
 
 let projetosPermitidos = [];
 
-// 🔹 LOGIN (GET - SEM CORS)
-async function login(){
+// 🔹 JSONP CALL
+function chamarAPI(params, callbackName){
+
+  const script = document.createElement("script");
+
+  const query = new URLSearchParams(params).toString();
+
+  script.src = `${API_URL}?${query}&callback=${callbackName}`;
+
+  document.body.appendChild(script);
+}
+
+// 🔹 LOGIN
+function login(){
 
   const usuario = document.getElementById("usuario").value;
   const senha = document.getElementById("senha").value;
 
-  const url = `${API_URL}?action=login&usuario=${encodeURIComponent(usuario)}&senha=${encodeURIComponent(senha)}`;
+  chamarAPI({
+    action:"login",
+    usuario,
+    senha
+  }, "respostaLogin");
+}
 
-  const res = await fetch(url);
-  const data = await res.json();
+// 🔹 CALLBACK LOGIN
+function respostaLogin(data){
 
   if(data.ok){
     projetosPermitidos = data.projetos;
@@ -84,6 +45,7 @@ async function login(){
 
 // 🔹 carregar projetos
 function carregarProjetos(){
+
   const select = document.getElementById("projetoSelect");
   select.innerHTML="";
 
@@ -95,17 +57,23 @@ function carregarProjetos(){
   });
 }
 
-// 🔹 salvar arquivo (GET)
-async function salvar(){
+// 🔹 SALVAR
+function salvar(){
 
   const projeto = document.getElementById("projetoSelect").value;
   const nome = document.getElementById("nomeArquivo").value;
   const link = document.getElementById("fileLink").value;
 
-  const url = `${API_URL}?action=addArquivo&projeto=${encodeURIComponent(projeto)}&nome=${encodeURIComponent(nome)}&link=${encodeURIComponent(link)}`;
+  chamarAPI({
+    action:"addArquivo",
+    projeto,
+    nome,
+    link
+  }, "respostaSalvar");
+}
 
-  const res = await fetch(url);
-  const data = await res.json();
+// 🔹 CALLBACK SALVAR
+function respostaSalvar(data){
 
   if(data.ok){
     document.getElementById("statusMsg").innerText="Salvo!";
@@ -114,6 +82,3 @@ async function salvar(){
   }
 }
 </script>
-
-</body>
-</html>
