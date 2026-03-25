@@ -1,3 +1,47 @@
+  <!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ✅ FAVICON -->
+<link rel="icon" href="https://raw.githubusercontent.com/marcosns/NexTag/main/favicon.ico">
+
+<title>Painel NexTag</title>
+
+<!-- Ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+
+<body>
+
+<!-- SUA INTERFACE AQUI -->
+<!-- exemplo mínimo -->
+<img id="logo" style="max-width:120px;">
+<p id="descricao"></p>
+
+<select id="projetoSelect" onchange="selecionarProjeto()"></select>
+
+<input id="nomeArquivo" placeholder="Nome">
+<input id="fileLink" placeholder="Link">
+
+<button onclick="salvar()">Salvar</button>
+
+<table>
+  <tbody id="listaArquivos"></tbody>
+</table>
+
+<div id="loginDiv">
+  <input id="usuario" placeholder="Usuário">
+  <input id="senha" placeholder="Senha">
+  <button onclick="login()">Entrar</button>
+</div>
+
+<div id="painelDiv" style="display:none;"></div>
+
+<!-- ✅ SEU SCRIPT (INALTERADO + PEQUENO FIX) -->
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwwcClQMs1loW2CGJuM_ObJzY3h8XLvz1ZclG4gDlxiEOQiU6oHN5hcZvdbo9NG78U9-A/exec";
 
@@ -17,7 +61,10 @@ function chamarAPI(params, callback){
   };
 
   const script = document.createElement("script");
+
+  // ✅ FIX IMPORTANTE (evita cache bug)
   script.src = `${API_URL}?${new URLSearchParams(params)}&callback=${cb}&nocache=${Date.now()}`;
+
   document.body.appendChild(script);
 }
 
@@ -74,6 +121,8 @@ function selecionarProjeto(){
 
   chamarAPI({action:"getProjeto",id_projeto:id}, function(res){
 
+    if(!res.projeto) return;
+
     const p = res.projeto;
 
     if(p.background){
@@ -94,22 +143,22 @@ function carregarArquivos(){
     const tabela = document.getElementById("listaArquivos");
     tabela.innerHTML = "";
 
-    res.arquivos.forEach(a=>{
+    (res.arquivos || []).forEach(a=>{
 
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
-        <td><i class="${a.icone}"></i> ${a.nome}</td>
+        <td><i class="${a.icone || 'fas fa-file'}"></i> ${a.nome}</td>
         <td>
-          <button class="btn" title="Editar" onclick="editarArquivo('${a.nome}')">
+          <button title="Editar" onclick="editarArquivo('${a.nome}')">
             <i class="fas fa-pen"></i>
           </button>
 
-          <button class="btn" title="Abrir" onclick="window.open('${a.link}')">
+          <button title="Abrir" onclick="window.open('${a.link}')">
             <i class="fas fa-download"></i>
           </button>
 
-          <button class="btn" title="Excluir" onclick="excluirArquivo('${a.nome}')">
+          <button title="Excluir" onclick="excluirArquivo('${a.nome}')">
             <i class="fas fa-trash"></i>
           </button>
         </td>
@@ -168,3 +217,6 @@ function excluirArquivo(nome){
   });
 }
 </script>
+
+</body>
+</html>
