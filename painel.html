@@ -1,9 +1,10 @@
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbz-V9McO0pde_wAApN4jGP959-WYCLe65rNXi0Dg0cUYITeJKD_MHPEbhPGghh4Eiwi7A/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwwcClQMs1loW2CGJuM_ObJzY3h8XLvz1ZclG4gDlxiEOQiU6oHN5hcZvdbo9NG78U9-A/exec";
 
 let projetosPermitidos = [];
 let projetoAtual = null;
-let iconeSelecionado = "fas fa-file"; // ✅ FIX
+let usuarioLogado = null;
+let iconeSelecionado = "fas fa-file";
 
 // JSONP
 function chamarAPI(params, callback){
@@ -17,8 +18,6 @@ function chamarAPI(params, callback){
 
   const script = document.createElement("script");
   script.src = `${API_URL}?${new URLSearchParams(params)}&callback=${cb}&nocache=${Date.now()}`;
-  script.onload = () => script.remove();
-
   document.body.appendChild(script);
 }
 
@@ -30,6 +29,7 @@ function login(){
   chamarAPI({action:"login",usuario,senha}, function(res){
 
     if(res.ok){
+      usuarioLogado = usuario;
       projetosPermitidos = res.projetos;
 
       document.getElementById("loginDiv").style.display="none";
@@ -39,7 +39,6 @@ function login(){
     }else{
       alert(res.erro);
     }
-
   });
 }
 
@@ -48,11 +47,9 @@ function carregarProjetos(){
   chamarAPI({action:"getProjetos"}, function(res){
 
     const select = document.getElementById("projetoSelect");
-    if(!select) return;
-
     select.innerHTML = "";
 
-    (res.projetos || []).forEach(p=>{
+    res.projetos.forEach(p=>{
       if(projetosPermitidos.includes(p.id_projeto)){
 
         const opt = document.createElement("option");
@@ -63,42 +60,28 @@ function carregarProjetos(){
       }
     });
 
-    if(select.value){
+    if(select.options.length > 0){
+      select.selectedIndex = 0;
       selecionarProjeto();
     }
   });
 }
 
-// SELECIONAR PROJETO
+// SELECIONAR
 function selecionarProjeto(){
-  const select = document.getElementById("projetoSelect");
-  if(!select) return;
-
-  const id = select.value;
+  const id = document.getElementById("projetoSelect").value;
   projetoAtual = id;
 
   chamarAPI({action:"getProjeto",id_projeto:id}, function(res){
 
-    if(!res.projeto) return;
-
     const p = res.projeto;
 
-    // BACKGROUND
     if(p.background){
       document.body.style.background = `url('${p.background}') center/cover no-repeat`;
     }
 
-    // LOGO
-    const logo = document.getElementById("logo");
-    if(logo && p.logo){
-      logo.src = p.logo;
-    }
-
-    // DESCRIÇÃO
-    const desc = document.getElementById("descricao");
-    if(desc){
-      desc.innerText = p.descricao || "";
-    }
+    document.getElementById("logo").src = p.logo || "";
+    document.getElementById("descricao").innerText = p.descricao || "";
   });
 
   carregarArquivos();
@@ -109,17 +92,14 @@ function carregarArquivos(){
   chamarAPI({action:"getArquivos",projeto:projetoAtual}, function(res){
 
     const tabela = document.getElementById("listaArquivos");
-    if(!tabela) return;
-
     tabela.innerHTML = "";
 
-    (res.arquivos || []).forEach(a=>{
+    res.arquivos.forEach(a=>{
 
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
-        <td><i class="${a.icone || 'fas fa-file'}"></i> ${a.nome}</td>
-
+        <td><i class="${a.icone}"></i> ${a.nome}</td>
         <td>
           <button class="btn" title="Editar" onclick="editarArquivo('${a.nome}')">
             <i class="fas fa-pen"></i>
@@ -137,7 +117,6 @@ function carregarArquivos(){
 
       tabela.appendChild(tr);
     });
-
   });
 }
 
@@ -153,7 +132,6 @@ function salvar(){
     link,
     icone:iconeSelecionado
   }, function(res){
-
     if(res.ok){
       carregarArquivos();
       alert("Salvo!");
@@ -163,16 +141,15 @@ function salvar(){
 
 // EDITAR
 function editarArquivo(nome){
-
   const novoLink = prompt("Novo link:");
-
   if(!novoLink) return;
 
   chamarAPI({
-    action:"editarArquivo",
+    action:"addArquivo",
     projeto:projetoAtual,
     nome,
-    link:novoLink
+    link:novoLink,
+    icone:iconeSelecionado
   }, function(){
     carregarArquivos();
   });
