@@ -1,11 +1,11 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- ✅ FAVICON -->
+<!-- FAVICON -->
 <link rel="icon" href="https://raw.githubusercontent.com/marcosns/NexTag/main/favicon.ico">
 
 <title>Painel NexTag</title>
@@ -13,35 +13,131 @@
 <!-- Ícones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+<!-- 🎨 ESTILO APPLE -->
+<style>
+body{
+  margin:0;
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+  background-size:cover;
+  color:#fff;
+}
+
+/* CONTAINER */
+.container{
+  max-width:900px;
+  margin:40px auto;
+  padding:30px;
+  border-radius:20px;
+
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(20px);
+
+  box-shadow:0 10px 40px rgba(0,0,0,0.3);
+}
+
+/* LOGO */
+#logo{
+  display:block;
+  margin:0 auto 10px;
+  max-height:80px;
+}
+
+#descricao{
+  text-align:center;
+  opacity:0.8;
+  margin-bottom:20px;
+}
+
+/* INPUTS */
+input, select{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border:none;
+  border-radius:10px;
+  background:rgba(255,255,255,0.1);
+  color:#fff;
+}
+
+/* BOTÕES */
+button{
+  border:none;
+  padding:12px;
+  border-radius:10px;
+  cursor:pointer;
+  background:rgba(255,255,255,0.15);
+  color:#fff;
+  transition:0.2s;
+}
+
+button:hover{
+  background:rgba(255,255,255,0.25);
+}
+
+/* BOTÕES ÍCONES */
+.btn{
+  width:36px;
+  height:36px;
+  border-radius:8px;
+}
+
+/* TABELA */
+table{
+  width:100%;
+  margin-top:20px;
+  border-collapse:collapse;
+}
+
+td{
+  padding:12px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+
+/* RODAPÉ */
+.footer{
+  text-align:center;
+  margin-top:20px;
+  font-size:12px;
+  opacity:0.6;
+}
+</style>
+
 </head>
 
 <body>
 
-<!-- SUA INTERFACE AQUI -->
-<!-- exemplo mínimo -->
-<img id="logo" style="max-width:120px;">
+<div class="container">
+
+<img id="logo">
 <p id="descricao"></p>
 
 <select id="projetoSelect" onchange="selecionarProjeto()"></select>
 
-<input id="nomeArquivo" placeholder="Nome">
-<input id="fileLink" placeholder="Link">
+<input id="nomeArquivo" placeholder="Nome do arquivo">
+<input id="fileLink" placeholder="Link do arquivo">
 
-<button onclick="salvar()">Salvar</button>
+<button onclick="salvar()" style="width:100%;">Salvar</button>
 
 <table>
   <tbody id="listaArquivos"></tbody>
 </table>
 
+<!-- LOGIN -->
 <div id="loginDiv">
   <input id="usuario" placeholder="Usuário">
-  <input id="senha" placeholder="Senha">
-  <button onclick="login()">Entrar</button>
+  <input id="senha" placeholder="Senha" type="password">
+  <button onclick="login()" style="width:100%;">Entrar</button>
 </div>
 
 <div id="painelDiv" style="display:none;"></div>
 
-<!-- ✅ SEU SCRIPT (INALTERADO + PEQUENO FIX) -->
+<!-- RODAPÉ -->
+<div class="footer">
+  Propriedade da NexTag ©
+</div>
+
+</div>
+
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwwcClQMs1loW2CGJuM_ObJzY3h8XLvz1ZclG4gDlxiEOQiU6oHN5hcZvdbo9NG78U9-A/exec";
 
@@ -61,10 +157,7 @@ function chamarAPI(params, callback){
   };
 
   const script = document.createElement("script");
-
-  // ✅ FIX IMPORTANTE (evita cache bug)
   script.src = `${API_URL}?${new URLSearchParams(params)}&callback=${cb}&nocache=${Date.now()}`;
-
   document.body.appendChild(script);
 }
 
@@ -80,8 +173,6 @@ function login(){
       projetosPermitidos = res.projetos;
 
       document.getElementById("loginDiv").style.display="none";
-      document.getElementById("painelDiv").style.display="block";
-
       carregarProjetos();
     }else{
       alert(res.erro);
@@ -150,15 +241,15 @@ function carregarArquivos(){
       tr.innerHTML = `
         <td><i class="${a.icone || 'fas fa-file'}"></i> ${a.nome}</td>
         <td>
-          <button title="Editar" onclick="editarArquivo('${a.nome}')">
+          <button class="btn" title="Editar" onclick="editarArquivo('${a.nome}')">
             <i class="fas fa-pen"></i>
           </button>
 
-          <button title="Abrir" onclick="window.open('${a.link}')">
+          <button class="btn" title="Abrir" onclick="window.open('${a.link}')">
             <i class="fas fa-download"></i>
           </button>
 
-          <button title="Excluir" onclick="excluirArquivo('${a.nome}')">
+          <button class="btn" title="Excluir" onclick="excluirArquivo('${a.nome}')">
             <i class="fas fa-trash"></i>
           </button>
         </td>
