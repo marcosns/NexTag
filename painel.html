@@ -9,31 +9,39 @@
 <style>
 body{
   margin:0;
-  font-family:Arial;
-  background:#0f172a;
-  color:white;
+  font-family: Arial;
+  background: linear-gradient(135deg,#0b1a2a,#122c44);
+  color:#fff;
 }
 
-.container{
-  width:90%;
+/* glass */
+.card{
   max-width:900px;
-  margin:30px auto;
+  margin:40px auto;
+  padding:25px;
+  border-radius:20px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  box-shadow:0 8px 30px rgba(0,0,0,0.3);
 }
 
-/* topo projeto */
-.topo{
-  text-align:center;
-  margin-bottom:20px;
-}
-
-.topo img{
-  max-width:150px;
-}
-
+/* inputs */
 input, select{
   width:100%;
   padding:10px;
-  margin:5px 0;
+  margin:8px 0;
+  border-radius:8px;
+  border:none;
+}
+
+/* botão */
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  margin-top:10px;
 }
 
 /* icones */
@@ -45,22 +53,23 @@ input, select{
 }
 
 .icone{
-  padding:10px;
-  border-radius:10px;
-  background:#1e293b;
+  width:55px;
+  height:55px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:12px;
   cursor:pointer;
-  text-align:center;
-  width:80px;
+  background: rgba(255,255,255,0.1);
+  transition:0.2s;
+}
+
+.icone:hover{
+  background: rgba(255,255,255,0.2);
 }
 
 .icone.selected{
-  background:#2563eb;
-}
-
-button{
-  padding:10px;
-  width:100%;
-  margin-top:10px;
+  background:#00c3ff;
 }
 
 /* tabela */
@@ -70,10 +79,28 @@ table{
   border-collapse:collapse;
 }
 
-td, th{
+td,th{
   padding:10px;
-  border-bottom:1px solid #333;
-  text-align:left;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+
+.btn{
+  padding:6px 10px;
+  margin:2px;
+  border-radius:6px;
+  cursor:pointer;
+}
+.edit{background:#ffc107}
+.del{background:#dc3545;color:#fff}
+
+/* header projeto */
+.headerProjeto{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.headerProjeto img{
+  max-height:80px;
 }
 
 </style>
@@ -81,64 +108,49 @@ td, th{
 
 <body>
 
-<div class="container">
+<div class="card">
 
-  <div class="topo">
-    <img id="logo">
-    <h2 id="nomeProjeto"></h2>
-    <p id="descricaoProjeto"></p>
-  </div>
+<div class="headerProjeto">
+  <img id="logoProjeto">
+  <p id="descProjeto"></p>
+</div>
 
-  <select id="projetoSelect" onchange="carregarTudo()"></select>
+<h2>Painel</h2>
 
-  <input id="nomeArquivo" placeholder="nome">
-  <input id="fileId" placeholder="fileId do google drive">
+<select id="projetoSelect" onchange="carregarProjeto()"></select>
 
-  <div class="icones" id="icones"></div>
+<input id="nomeArquivo" placeholder="Nome do arquivo">
+<input id="fileLink" placeholder="File ID do Google Drive">
 
-  <button onclick="salvar()">Salvar</button>
+<div class="icones" id="listaIcones"></div>
 
-  <h3>Arquivos</h3>
+<button onclick="salvar()">Salvar</button>
 
-  <table>
-    <thead>
-      <tr>
-        <th></th>
-        <th>Nome</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody id="listaArquivos"></tbody>
-  </table>
+<h3>Arquivos</h3>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Nome</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="tabelaArquivos"></tbody>
+</table>
 
 </div>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbxtkJsDc3QlGJvGd9BdwSkK7KrS1ZDA2zaED8rmLZJD7KVaB2Ru32lAAFUGkO3x7KW7vg/exec";
 
-let projetosPermitidos = [];
+let projetos = [];
+let arquivos = [];
 let iconeSelecionado = "fas fa-file";
-let indexEditando = null;
 
-// 🔹 ÍCONES
-const iconesDisponiveis = [
-{class: "fas fa-file", label: "Arquivo"},
-{class: "fas fa-file-pdf", label: "PDF"},
-{class: "fas fa-image", label: "Imagem"},
-{class: "fas fa-video", label: "Vídeo"},
-{class: "fas fa-book", label: "Livro"},
-{class: "fas fa-file-word", label: "Word"},
-{class: "fas fa-file-excel", label: "Excel"},
-{class: "fas fa-file-powerpoint", label: "PowerPoint"},
-{class: "fas fa-download", label: "Download"},
-{class: "fas fa-link", label: "Link"},
-{class: "fas fa-folder", label: "Pasta"}
-];
-
-// JSONP
+/* API */
 function chamarAPI(params, callback){
-
-  const cb = "cb_" + Date.now();
+  const cb = "cb_"+Date.now();
 
   window[cb] = function(data){
     callback(data);
@@ -147,159 +159,143 @@ function chamarAPI(params, callback){
 
   const script = document.createElement("script");
   script.src = `${API_URL}?${new URLSearchParams(params)}&callback=${cb}&nocache=${Date.now()}`;
-  script.onload = () => script.remove();
-
   document.body.appendChild(script);
 }
 
-// LOGIN automático simplificado (ajuste se quiser depois)
-window.onload = () => {
-  loginDireto();
-  renderizarIcones();
-};
+/* ICONE */
+const icones = [
+"fas fa-file",
+"fas fa-file-pdf",
+"fas fa-image",
+"fas fa-video",
+"fas fa-book",
+"fas fa-file-word",
+"fas fa-file-excel",
+"fas fa-file-powerpoint",
+"fas fa-download",
+"fas fa-link",
+"fas fa-folder"
+];
 
-// login direto (temporário)
-function loginDireto(){
-  chamarAPI({
-    action:"login",
-    usuario:"admin",
-    senha:"123"
-  }, function(data){
+function montarIcones(){
+  const div = document.getElementById("listaIcones");
+  div.innerHTML="";
 
-    projetosPermitidos = data.projetos;
-    carregarProjetos();
+  icones.forEach(i=>{
+    const el = document.createElement("div");
+    el.className="icone";
+    el.innerHTML=`<i class="${i}"></i>`;
+
+    el.onclick=()=>{
+      document.querySelectorAll(".icone").forEach(x=>x.classList.remove("selected"));
+      el.classList.add("selected");
+      iconeSelecionado = i;
+    }
+
+    div.appendChild(el);
   });
 }
 
-// carregar projetos
+/* CARREGAR PROJETOS */
 function carregarProjetos(){
+  chamarAPI({action:"getProjetos"}, res=>{
+    projetos = res.projetos || [];
 
-  projetoSelect.innerHTML="";
+    const sel = document.getElementById("projetoSelect");
+    sel.innerHTML="";
 
-  projetosPermitidos.forEach(p=>{
-    const opt = document.createElement("option");
-    opt.value = p;
-    opt.innerText = p;
-    projetoSelect.appendChild(opt);
-  });
-
-  carregarTudo();
-}
-
-// carregar tudo
-function carregarTudo(){
-  carregarProjetoInfo();
-  carregarArquivos();
-}
-
-// 🔹 carregar dados do projeto
-function carregarProjetoInfo(){
-
-  chamarAPI({
-    action:"getProjetoInfo",
-    projeto: projetoSelect.value
-  }, function(data){
-
-    const p = data.projeto;
-
-    document.body.style.backgroundImage = `url(${p.background})`;
-    logo.src = p.logo;
-    nomeProjeto.innerText = p.nome;
-    descricaoProjeto.innerText = p.descricao;
-
-  });
-}
-
-// 🔹 render ícones
-function renderizarIcones(){
-
-  icones.innerHTML = "";
-
-  iconesDisponiveis.forEach(i=>{
-
-    const div = document.createElement("div");
-    div.className = "icone";
-    div.innerHTML = `<i class="${i.class}"></i><br>${i.label}`;
-
-    div.onclick = () => {
-      document.querySelectorAll(".icone").forEach(el=>el.classList.remove("selected"));
-      div.classList.add("selected");
-      iconeSelecionado = i.class;
-    };
-
-    icones.appendChild(div);
-  });
-
-}
-
-// 🔹 listar arquivos
-function carregarArquivos(){
-
-  chamarAPI({
-    action:"listarArquivos",
-    projeto: projetoSelect.value
-  }, function(data){
-
-    listaArquivos.innerHTML="";
-
-    data.arquivos.forEach(a=>{
-
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td><input type="checkbox"></td>
-        <td><i class="${a.icone}"></i> ${a.nome}</td>
-        <td>
-          <button onclick="editar(${a.index}, '${a.nome}', '${a.fileid}', '${a.icone}')">Editar</button>
-          <button onclick="deletar(${a.index})">Excluir</button>
-        </td>
-      `;
-
-      listaArquivos.appendChild(tr);
+    projetos.forEach(p=>{
+      const opt = document.createElement("option");
+      opt.value = p.id_projeto;
+      opt.textContent = p.nome;
+      sel.appendChild(opt);
     });
 
+    if(projetos.length){
+      carregarProjeto();
+    }
   });
 }
 
-// editar
-function editar(i,n,f,ic){
+/* CARREGAR PROJETO */
+function carregarProjeto(){
+  const id = document.getElementById("projetoSelect").value;
 
-  indexEditando = i;
+  chamarAPI({action:"getProjeto", id_projeto:id}, res=>{
+    const p = res.projeto;
 
-  nomeArquivo.value = n;
-  fileId.value = f;
-  iconeSelecionado = ic;
-}
+    document.getElementById("logoProjeto").src = p.logo;
+    document.getElementById("descProjeto").innerText = p.descricao;
 
-// salvar
-function salvar(){
+    document.body.style.background = p.background || "#0b1a2a";
+  });
 
-  const action = indexEditando !== null ? "atualizarArquivo" : "addArquivo";
-
-  chamarAPI({
-    action,
-    projeto: projetoSelect.value,
-    nome: nomeArquivo.value,
-    fileid: fileId.value,
-    icone: iconeSelecionado,
-    index: indexEditando
-  }, function(){
-
-    indexEditando = null;
-    carregarArquivos();
+  chamarAPI({action:"getArquivos", projeto:id}, res=>{
+    arquivos = res.arquivos || [];
+    renderTabela();
   });
 }
 
-// deletar
+/* TABELA */
+function renderTabela(){
+  const tb = document.getElementById("tabelaArquivos");
+  tb.innerHTML="";
+
+  arquivos.forEach((a,i)=>{
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td><input type="checkbox"></td>
+      <td><i class="${a.icone}"></i> ${a.nome}</td>
+      <td>
+        <button class="btn edit" onclick="editar(${i})">Editar</button>
+        <button class="btn del" onclick="deletar(${i})">Excluir</button>
+      </td>
+    `;
+
+    tb.appendChild(tr);
+  });
+}
+
+/* EDITAR */
+function editar(i){
+  const a = arquivos[i];
+
+  document.getElementById("nomeArquivo").value = a.nome;
+  document.getElementById("fileLink").value = a.fileId;
+  iconeSelecionado = a.icone;
+}
+
+/* DELETAR */
 function deletar(i){
+  const a = arquivos[i];
 
   chamarAPI({
-    action:"deletarArquivo",
-    index:i
-  }, function(){
-    carregarArquivos();
+    action:"deleteArquivo",
+    projeto:document.getElementById("projetoSelect").value,
+    nome:a.nome
+  },()=>{
+    carregarProjeto();
   });
 }
+
+/* SALVAR */
+function salvar(){
+  chamarAPI({
+    action:"addArquivo",
+    projeto:document.getElementById("projetoSelect").value,
+    nome:document.getElementById("nomeArquivo").value,
+    link:document.getElementById("fileLink").value,
+    icone:iconeSelecionado
+  },()=>{
+    carregarProjeto();
+  });
+}
+
+/* INIT */
+montarIcones();
+carregarProjetos();
+
 </script>
 
 </body>
