@@ -2,7 +2,6 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Painel NexTag</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -11,10 +10,9 @@ body{
   margin:0;
   font-family: Arial;
   background: linear-gradient(135deg,#0b1a2a,#122c44);
-  color:#fff;
+  color:white;
 }
 
-/* glass */
 .card{
   max-width:900px;
   margin:40px auto;
@@ -22,11 +20,9 @@ body{
   border-radius:20px;
   background: rgba(255,255,255,0.08);
   backdrop-filter: blur(12px);
-  box-shadow:0 8px 30px rgba(0,0,0,0.3);
 }
 
-/* inputs */
-input, select{
+input,select{
   width:100%;
   padding:10px;
   margin:8px 0;
@@ -34,22 +30,19 @@ input, select{
   border:none;
 }
 
-/* botão */
 button{
   width:100%;
   padding:12px;
   border:none;
   border-radius:10px;
-  cursor:pointer;
   margin-top:10px;
+  cursor:pointer;
 }
 
-/* icones */
 .icones{
   display:flex;
-  flex-wrap:wrap;
   gap:10px;
-  margin:10px 0;
+  flex-wrap:wrap;
 }
 
 .icone{
@@ -59,50 +52,32 @@ button{
   align-items:center;
   justify-content:center;
   border-radius:12px;
-  cursor:pointer;
   background: rgba(255,255,255,0.1);
-  transition:0.2s;
-}
-
-.icone:hover{
-  background: rgba(255,255,255,0.2);
+  cursor:pointer;
 }
 
 .icone.selected{
   background:#00c3ff;
 }
 
-/* tabela */
+.btn{
+  padding:6px 10px;
+  border-radius:8px;
+  background: rgba(255,255,255,0.1);
+  border:none;
+  color:white;
+  cursor:pointer;
+}
+
 table{
   width:100%;
   margin-top:20px;
-  border-collapse:collapse;
 }
 
 td,th{
   padding:10px;
   border-bottom:1px solid rgba(255,255,255,0.1);
 }
-
-.btn{
-  padding:6px 10px;
-  margin:2px;
-  border-radius:6px;
-  cursor:pointer;
-}
-.edit{background:#ffc107}
-.del{background:#dc3545;color:#fff}
-
-/* header projeto */
-.headerProjeto{
-  text-align:center;
-  margin-bottom:20px;
-}
-
-.headerProjeto img{
-  max-height:80px;
-}
-
 </style>
 </head>
 
@@ -110,17 +85,12 @@ td,th{
 
 <div class="card">
 
-<div class="headerProjeto">
-  <img id="logoProjeto">
-  <p id="descProjeto"></p>
-</div>
-
 <h2>Painel</h2>
 
 <select id="projetoSelect" onchange="carregarProjeto()"></select>
 
-<input id="nomeArquivo" placeholder="Nome do arquivo">
-<input id="fileLink" placeholder="File ID do Google Drive">
+<input id="nomeArquivo" placeholder="Nome">
+<input id="fileLink" placeholder="Link ou fileId">
 
 <div class="icones" id="listaIcones"></div>
 
@@ -141,14 +111,25 @@ td,th{
 
 </div>
 
-<script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzXFtkNNmBUAo5ReSaTu9ErL4zzOxpj3APlKH4tHf_9rT6e8BcqWJPjnavvgkdPgilcIQ/exec";
+<!-- MODAL -->
+<div id="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
+<div style="background:rgba(255,255,255,0.1);padding:20px;border-radius:15px;width:300px;">
+<h3>Editar Link</h3>
+<input id="novoLink">
+<button onclick="confirmarEdicao()">Salvar</button>
+<button onclick="fecharModal()">Cancelar</button>
+</div>
+</div>
 
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbz-V9McO0pde_wAApN4jGP959-WYCLe65rNXi0Dg0cUYITeJKD_MHPEbhPGghh4Eiwi7A/exec";
+
+let usuarioLogado = prompt("Usuário:");
 let projetos = [];
 let arquivos = [];
 let iconeSelecionado = "fas fa-file";
+let arquivoEditando = null;
 
-/* API */
 function chamarAPI(params, callback){
   const cb = "cb_"+Date.now();
 
@@ -162,124 +143,64 @@ function chamarAPI(params, callback){
   document.body.appendChild(script);
 }
 
-/* ICONE */
-const icones = [
-"fas fa-file",
-"fas fa-file-pdf",
-"fas fa-image",
-"fas fa-video",
-"fas fa-book",
-"fas fa-file-word",
-"fas fa-file-excel",
-"fas fa-file-powerpoint",
-"fas fa-download",
-"fas fa-link",
-"fas fa-folder"
-];
+const icones = ["fas fa-file","fas fa-file-pdf","fas fa-image","fas fa-video","fas fa-book"];
 
 function montarIcones(){
   const div = document.getElementById("listaIcones");
-  div.innerHTML="";
-
   icones.forEach(i=>{
     const el = document.createElement("div");
     el.className="icone";
     el.innerHTML=`<i class="${i}"></i>`;
-
     el.onclick=()=>{
       document.querySelectorAll(".icone").forEach(x=>x.classList.remove("selected"));
       el.classList.add("selected");
-      iconeSelecionado = i;
-    }
-
+      iconeSelecionado=i;
+    };
     div.appendChild(el);
   });
 }
 
-/* CARREGAR PROJETOS */
 function carregarProjetos(){
-  chamarAPI({action:"getProjetos"}, res=>{
-    projetos = res.projetos || [];
-
+  chamarAPI({action:"getProjetos", usuario:usuarioLogado}, res=>{
     const sel = document.getElementById("projetoSelect");
     sel.innerHTML="";
-
-    projetos.forEach(p=>{
-      const opt = document.createElement("option");
-      opt.value = p.id_projeto;
-      opt.textContent = p.nome;
-      sel.appendChild(opt);
+    res.projetos.forEach(p=>{
+      const o=document.createElement("option");
+      o.value=p.id_projeto;
+      o.textContent=p.nome;
+      sel.appendChild(o);
     });
-
-    if(projetos.length){
-      carregarProjeto();
-    }
+    carregarProjeto();
   });
 }
 
-/* CARREGAR PROJETO */
 function carregarProjeto(){
   const id = document.getElementById("projetoSelect").value;
 
-  chamarAPI({action:"getProjeto", id_projeto:id}, res=>{
-    const p = res.projeto;
-
-    document.getElementById("logoProjeto").src = p.logo;
-    document.getElementById("descProjeto").innerText = p.descricao;
-
-    document.body.style.background = p.background || "#0b1a2a";
-  });
-
   chamarAPI({action:"getArquivos", projeto:id}, res=>{
-    arquivos = res.arquivos || [];
+    arquivos = res.arquivos;
     renderTabela();
   });
 }
 
-/* TABELA */
 function renderTabela(){
   const tb = document.getElementById("tabelaArquivos");
   tb.innerHTML="";
 
   arquivos.forEach((a,i)=>{
-    const tr = document.createElement("tr");
-
-    tr.innerHTML = `
-      <td><input type="checkbox"></td>
+    tb.innerHTML += `
+    <tr>
+      <td><i class="fas fa-chevron-right"></i></td>
       <td><i class="${a.icone}"></i> ${a.nome}</td>
       <td>
-        <button class="btn edit" onclick="editar(${i})">Editar</button>
-        <button class="btn del" onclick="deletar(${i})">Excluir</button>
+        <button class="btn" onclick="editar(${i})">Editar</button>
+        <button class="btn" onclick="download('${a.link}')">Download</button>
+        <button class="btn" onclick="deletar(${i})">Excluir</button>
       </td>
-    `;
-
-    tb.appendChild(tr);
+    </tr>`;
   });
 }
 
-/* EDITAR */
-function editar(i){
-  const a = arquivos[i];
-
-  document.getElementById("nomeArquivo").value = a.nome;
-  document.getElementById("fileLink").value = a.fileId;
-  iconeSelecionado = a.icone;
-}
-
-/* DELETAR */
-function deletar(i){
-  const a = arquivos[i];
-
-  chamarAPI({
-    action:"deleteArquivo",
-    projeto:document.getElementById("projetoSelect").value,
-    nome:a.nome
-  },()=>{
-    carregarProjeto();
-  });
-}
-
-/* SALVAR */
 function salvar(){
   chamarAPI({
     action:"addArquivo",
@@ -287,12 +208,44 @@ function salvar(){
     nome:document.getElementById("nomeArquivo").value,
     link:document.getElementById("fileLink").value,
     icone:iconeSelecionado
-  },()=>{
+  }, ()=>carregarProjeto());
+}
+
+function deletar(i){
+  const a = arquivos[i];
+  chamarAPI({
+    action:"deleteArquivo",
+    projeto:document.getElementById("projetoSelect").value,
+    nome:a.nome
+  }, ()=>carregarProjeto());
+}
+
+function editar(i){
+  arquivoEditando = arquivos[i];
+  document.getElementById("modal").style.display="flex";
+}
+
+function confirmarEdicao(){
+  chamarAPI({
+    action:"addArquivo",
+    projeto:document.getElementById("projetoSelect").value,
+    nome:arquivoEditando.nome,
+    link:document.getElementById("novoLink").value,
+    icone:arquivoEditando.icone
+  }, ()=>{
+    fecharModal();
     carregarProjeto();
   });
 }
 
-/* INIT */
+function fecharModal(){
+  document.getElementById("modal").style.display="none";
+}
+
+function download(link){
+  window.open(link,"_blank");
+}
+
 montarIcones();
 carregarProjetos();
 
