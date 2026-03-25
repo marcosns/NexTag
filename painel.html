@@ -14,12 +14,20 @@ body{
   color:white;
 }
 
-.card{
-  background:#1e293b;
-  padding:20px;
-  border-radius:10px;
-  width:350px;
-  margin:100px auto;
+.container{
+  width:90%;
+  max-width:900px;
+  margin:30px auto;
+}
+
+/* topo projeto */
+.topo{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.topo img{
+  max-width:150px;
 }
 
 input, select{
@@ -28,60 +36,80 @@ input, select{
   margin:5px 0;
 }
 
-button{
-  width:100%;
+/* icones */
+.icones{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:10px 0;
+}
+
+.icone{
   padding:10px;
+  border-radius:10px;
+  background:#1e293b;
+  cursor:pointer;
+  text-align:center;
+  width:80px;
+}
+
+.icone.selected{
+  background:#2563eb;
+}
+
+button{
+  padding:10px;
+  width:100%;
   margin-top:10px;
 }
 
-#painelDiv{
-  display:none;
-  width:90%;
-  max-width:800px;
-  margin:30px auto;
+/* tabela */
+table{
+  width:100%;
+  margin-top:20px;
+  border-collapse:collapse;
 }
 
-.item{
-  background:#1e293b;
+td, th{
   padding:10px;
-  margin:10px 0;
-  border-radius:10px;
+  border-bottom:1px solid #333;
+  text-align:left;
 }
+
 </style>
 </head>
 
 <body>
 
-<div class="card" id="loginDiv">
-  <h2>Login</h2>
-  <input id="usuario" placeholder="usuario">
-  <input id="senha" type="password" placeholder="senha">
-  <button onclick="login()">Entrar</button>
-  <p id="loginMsg"></p>
-</div>
+<div class="container">
 
-<div id="painelDiv">
+  <div class="topo">
+    <img id="logo">
+    <h2 id="nomeProjeto"></h2>
+    <p id="descricaoProjeto"></p>
+  </div>
 
-  <h2>Painel</h2>
-
-  <select id="projetoSelect" onchange="carregarArquivos()"></select>
+  <select id="projetoSelect" onchange="carregarTudo()"></select>
 
   <input id="nomeArquivo" placeholder="nome">
   <input id="fileId" placeholder="fileId do google drive">
 
-  <select id="icone">
-    <option value="fas fa-file">Arquivo</option>
-    <option value="fas fa-image">Imagem</option>
-    <option value="fas fa-file-pdf">PDF</option>
-    <option value="fas fa-drafting-compass">Projeto</option>
-  </select>
+  <div class="icones" id="icones"></div>
 
   <button onclick="salvar()">Salvar</button>
 
-  <p id="statusMsg"></p>
-
   <h3>Arquivos</h3>
-  <div id="listaArquivos"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Nome</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="listaArquivos"></tbody>
+  </table>
 
 </div>
 
@@ -89,8 +117,25 @@ button{
 const API_URL = "https://script.google.com/macros/s/AKfycbxtkJsDc3QlGJvGd9BdwSkK7KrS1ZDA2zaED8rmLZJD7KVaB2Ru32lAAFUGkO3x7KW7vg/exec";
 
 let projetosPermitidos = [];
+let iconeSelecionado = "fas fa-file";
 let indexEditando = null;
 
+// 🔹 ÍCONES
+const iconesDisponiveis = [
+{class: "fas fa-file", label: "Arquivo"},
+{class: "fas fa-file-pdf", label: "PDF"},
+{class: "fas fa-image", label: "Imagem"},
+{class: "fas fa-video", label: "Vídeo"},
+{class: "fas fa-book", label: "Livro"},
+{class: "fas fa-file-word", label: "Word"},
+{class: "fas fa-file-excel", label: "Excel"},
+{class: "fas fa-file-powerpoint", label: "PowerPoint"},
+{class: "fas fa-download", label: "Download"},
+{class: "fas fa-link", label: "Link"},
+{class: "fas fa-folder", label: "Pasta"}
+];
+
+// JSONP
 function chamarAPI(params, callback){
 
   const cb = "cb_" + Date.now();
@@ -100,44 +145,36 @@ function chamarAPI(params, callback){
     delete window[cb];
   };
 
-  const query = new URLSearchParams(params).toString();
-
   const script = document.createElement("script");
-  script.src = `${API_URL}?${query}&callback=${cb}&nocache=${Date.now()}`;
+  script.src = `${API_URL}?${new URLSearchParams(params)}&callback=${cb}&nocache=${Date.now()}`;
   script.onload = () => script.remove();
 
   document.body.appendChild(script);
 }
 
-// LOGIN
-function login(){
+// LOGIN automático simplificado (ajuste se quiser depois)
+window.onload = () => {
+  loginDireto();
+  renderizarIcones();
+};
 
+// login direto (temporário)
+function loginDireto(){
   chamarAPI({
     action:"login",
-    usuario: usuario.value,
-    senha: senha.value
+    usuario:"admin",
+    senha:"123"
   }, function(data){
 
-    if(data.ok){
-
-      projetosPermitidos = data.projetos;
-
-      loginDiv.style.display="none";
-      painelDiv.style.display="block";
-
-      carregarProjetos();
-
-    }else{
-      loginMsg.innerText = data.erro;
-    }
-
+    projetosPermitidos = data.projetos;
+    carregarProjetos();
   });
 }
 
-// PROJETOS
+// carregar projetos
 function carregarProjetos(){
 
-  projetoSelect.innerHTML = "";
+  projetoSelect.innerHTML="";
 
   projetosPermitidos.forEach(p=>{
     const opt = document.createElement("option");
@@ -146,51 +183,95 @@ function carregarProjetos(){
     projetoSelect.appendChild(opt);
   });
 
+  carregarTudo();
+}
+
+// carregar tudo
+function carregarTudo(){
+  carregarProjetoInfo();
   carregarArquivos();
 }
 
-// LISTAR
-function carregarArquivos(){
+// 🔹 carregar dados do projeto
+function carregarProjetoInfo(){
 
-  const projeto = projetoSelect.value;
+  chamarAPI({
+    action:"getProjetoInfo",
+    projeto: projetoSelect.value
+  }, function(data){
+
+    const p = data.projeto;
+
+    document.body.style.backgroundImage = `url(${p.background})`;
+    logo.src = p.logo;
+    nomeProjeto.innerText = p.nome;
+    descricaoProjeto.innerText = p.descricao;
+
+  });
+}
+
+// 🔹 render ícones
+function renderizarIcones(){
+
+  icones.innerHTML = "";
+
+  iconesDisponiveis.forEach(i=>{
+
+    const div = document.createElement("div");
+    div.className = "icone";
+    div.innerHTML = `<i class="${i.class}"></i><br>${i.label}`;
+
+    div.onclick = () => {
+      document.querySelectorAll(".icone").forEach(el=>el.classList.remove("selected"));
+      div.classList.add("selected");
+      iconeSelecionado = i.class;
+    };
+
+    icones.appendChild(div);
+  });
+
+}
+
+// 🔹 listar arquivos
+function carregarArquivos(){
 
   chamarAPI({
     action:"listarArquivos",
-    projeto
+    projeto: projetoSelect.value
   }, function(data){
 
-    listaArquivos.innerHTML = "";
+    listaArquivos.innerHTML="";
 
     data.arquivos.forEach(a=>{
 
-      const div = document.createElement("div");
-      div.className = "item";
+      const tr = document.createElement("tr");
 
-      div.innerHTML = `
-        <b>${a.nome}</b><br>
-        ${a.fileid}<br>
-        <button onclick="editar(${a.index}, '${a.nome}', '${a.fileid}', '${a.icone}')">Editar</button>
-        <button onclick="deletar(${a.index})">Excluir</button>
+      tr.innerHTML = `
+        <td><input type="checkbox"></td>
+        <td><i class="${a.icone}"></i> ${a.nome}</td>
+        <td>
+          <button onclick="editar(${a.index}, '${a.nome}', '${a.fileid}', '${a.icone}')">Editar</button>
+          <button onclick="deletar(${a.index})">Excluir</button>
+        </td>
       `;
 
-      listaArquivos.appendChild(div);
-
+      listaArquivos.appendChild(tr);
     });
 
   });
 }
 
-// EDITAR
+// editar
 function editar(i,n,f,ic){
 
   indexEditando = i;
 
   nomeArquivo.value = n;
   fileId.value = f;
-  icone.value = ic;
+  iconeSelecionado = ic;
 }
 
-// SALVAR
+// salvar
 function salvar(){
 
   const action = indexEditando !== null ? "atualizarArquivo" : "addArquivo";
@@ -200,25 +281,22 @@ function salvar(){
     projeto: projetoSelect.value,
     nome: nomeArquivo.value,
     fileid: fileId.value,
-    icone: icone.value,
+    icone: iconeSelecionado,
     index: indexEditando
   }, function(){
 
-    statusMsg.innerText = "Salvo!";
     indexEditando = null;
-
     carregarArquivos();
   });
 }
 
-// DELETAR
+// deletar
 function deletar(i){
 
   chamarAPI({
     action:"deletarArquivo",
     index:i
   }, function(){
-
     carregarArquivos();
   });
 }
