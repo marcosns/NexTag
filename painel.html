@@ -315,6 +315,7 @@ function carregarArquivos(){
       tr.innerHTML =
         "<td><i class='" + a.icone + "'></i> " + a.nome + "</td>" +
         "<td>" +
+        "<button onclick='visualizarArquivo(" + JSON.stringify(a.link) + ")'>👁️</button>" +
         "<button onclick='editarArquivo(" + JSON.stringify(a.nome) + ")'>✏️</button>" +
         "<button onclick='window.open(" + JSON.stringify(a.link) + ")'>⬇️</button>" +
         "<button onclick='excluirArquivo(" + JSON.stringify(a.nome) + ")'>🗑️</button>" +
@@ -349,6 +350,14 @@ function excluirArquivo(nome){
   if(confirm("Excluir?")){
     chamarAPI({action:"deleteArquivo",projeto:projetoAtual,nome}, carregarArquivos);
   }
+function visualizarArquivo(link){
+  window.open(link, "_blank");
+}
+
+function downloadArquivo(link){
+  window.open(link, "_blank");
+ }
+  
 }
 </script>
 
