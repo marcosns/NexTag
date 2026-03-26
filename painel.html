@@ -167,8 +167,8 @@ function chamarAPI(params, callback){
 
 /* LOGIN */
 function login(){
-  const usuario = usuarioInput.value;
-  const senha = senhaInput.value;
+const usuario = document.getElementById("usuario").value;
+const senha = document.getElementById("senha").value;
 
   chamarAPI({action:"login",usuario,senha}, res=>{
     if(res.ok){
