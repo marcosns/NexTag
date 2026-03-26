@@ -182,16 +182,26 @@ function chamarAPI(params, callback){
 
 // LOGIN
 function login(){
-  const usuario = usuario.value;
-  const senha = senha.value;
+  const usuarioInput = document.getElementById("usuario").value;
+  const senhaInput = document.getElementById("senha").value;
 
-  chamarAPI({action:"login",usuario,senha}, res=>{
+  chamarAPI({
+    action:"login",
+    usuario: usuarioInput,
+    senha: senhaInput
+  }, function(res){
+
     if(res.ok){
       projetosPermitidos = res.projetos;
-      loginDiv.style.display="none";
-      painel.style.display="block";
+
+      document.getElementById("loginDiv").style.display = "none";
+      document.getElementById("painel").style.display = "block";
+
       carregarProjetos();
-    } else alert("Login inválido");
+    } else {
+      alert("Login inválido");
+    }
+
   });
 }
 
