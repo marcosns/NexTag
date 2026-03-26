@@ -13,39 +13,47 @@ body{
   margin:0;
   font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
   background:#111;
-  color:#ffffff; /* 🔥 ALTERE AQUI SE QUISER */
+  color:#ffffff; /* ALTERE AQUI SE QUISER */
 }
 
-/* container */
+.fade{
+  animation:fadeIn 0.4s ease;
+}
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(10px);}
+  to{opacity:1;}
+}
+
 .container{
   max-width:900px;
-  margin:40px auto;
-  padding:30px;
+  margin:20px auto;
+  padding:20px;
   border-radius:20px;
   background:rgba(255,255,255,0.08);
   backdrop-filter:blur(20px);
 }
 
-/* logos */
 .logo-main{
   display:block;
   margin:0 auto 10px;
-  max-width:160px;
+  max-width:140px;
 }
 
 #logoProjeto{
   display:block;
   margin:10px auto 20px;
-  max-height:80px;
+  max-height:70px;
 }
 
-/* descrição */
-#descricao{
-  text-align:center;
-  margin-bottom:20px;
+.top{
+  display:flex;
+  justify-content:space-between;
 }
 
-/* inputs */
+.logout{
+  font-size:12px;
+}
+
 input, select{
   width:100%;
   padding:12px;
@@ -56,7 +64,6 @@ input, select{
   color:#fff;
 }
 
-/* botões */
 button{
   border:none;
   padding:12px;
@@ -70,15 +77,6 @@ button:hover{
   background:rgba(255,255,255,0.25);
 }
 
-/* topo */
-.top-bar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-top:20px;
-}
-
-/* tabela */
 table{
   width:100%;
   margin-top:10px;
@@ -88,16 +86,16 @@ td{
   padding:10px;
 }
 
-/* modal */
 .modal{
   position:fixed;
-  top:0; left:0;
+  top:0;
+  left:0;
   width:100%;
   height:100%;
-  background:rgba(0,0,0,0.7);
   display:none;
-  align-items:center;
+  background:rgba(0,0,0,0.7);
   justify-content:center;
+  align-items:center;
 }
 
 .modal-content{
@@ -108,7 +106,6 @@ td{
   max-width:400px;
 }
 
-/* icones */
 .icon-picker{
   display:flex;
   gap:10px;
@@ -136,7 +133,7 @@ td{
 
 <body>
 
-<div class="container">
+<div class="container fade">
 
 <!-- LOGIN -->
 <div id="loginDiv">
@@ -149,17 +146,22 @@ td{
 <!-- PAINEL -->
 <div id="painel" style="display:none;">
 
+<div class="top">
+  <div></div>
+  <button class="logout" onclick="logout()">Sair</button>
+</div>
+
 <img class="logo-main" src="https://raw.githubusercontent.com/marcosns/NexTag/main/nextag_logo.png">
 <img id="logoProjeto">
 
-<p id="descricao"></p>
+<p id="descricao" style="text-align:center;"></p>
 
 <p style="text-align:center;">Selecione o projeto</p>
 <select id="projetoSelect" onchange="selecionarProjeto()"></select>
 
-<div class="top-bar">
+<div style="display:flex; justify-content:space-between; margin-top:20px;">
   <h3>Arquivos</h3>
-  <button onclick="abrirModal()">+ Adicionar arquivo</button>
+  <button onclick="abrirModal()">+ Adicionar</button>
 </div>
 
 <table>
@@ -188,7 +190,7 @@ td{
   <i class="fas fa-phone" onclick="selecionarIcone(this)"></i>
 </div>
 
-<input id="fileLink" placeholder="Cole o link do arquivo compartilhado">
+<input id="fileLink" placeholder="Cole o link do arquivo">
 
 <button onclick="salvar()">Salvar</button>
 <button onclick="fecharModal()">Cancelar</button>
@@ -203,7 +205,6 @@ let projetosPermitidos = [];
 let projetoAtual = null;
 let iconeSelecionado = "fas fa-file";
 
-// JSONP
 function chamarAPI(params, callback){
   const cb = "cb_" + Date.now();
   const script = document.createElement("script");
@@ -214,11 +215,10 @@ function chamarAPI(params, callback){
     script.remove();
   };
 
-  script.src = `${API_URL}?${new URLSearchParams(params)}&callback=${cb}`;
+  script.src = API_URL + "?" + new URLSearchParams(params) + "&callback=" + cb;
   document.body.appendChild(script);
 }
 
-// LOGIN
 function login(){
   const usuario = document.getElementById("usuario").value;
   const senha = document.getElementById("senha").value;
@@ -226,24 +226,48 @@ function login(){
   chamarAPI({action:"login",usuario,senha}, res=>{
     if(res.ok){
       projetosPermitidos = res.projetos;
-      loginDiv.style.display="none";
-      painel.style.display="block";
+
+      localStorage.setItem("user", usuario);
+      localStorage.setItem("projetos", JSON.stringify(res.projetos));
+
+      document.getElementById("loginDiv").style.display="none";
+      document.getElementById("painel").style.display="block";
+
       carregarProjetos();
-    } else alert("Login inválido");
+    } else {
+      alert("Login inválido");
+    }
   });
 }
 
-// PROJETOS
+window.onload = function(){
+  const user = localStorage.getItem("user");
+  const proj = localStorage.getItem("projetos");
+
+  if(user && proj){
+    projetosPermitidos = JSON.parse(proj);
+    document.getElementById("loginDiv").style.display="none";
+    document.getElementById("painel").style.display="block";
+    carregarProjetos();
+  }
+}
+
+function logout(){
+  localStorage.clear();
+  location.reload();
+}
+
 function carregarProjetos(){
   chamarAPI({action:"getProjetos"}, res=>{
-    projetoSelect.innerHTML="";
+    const select = document.getElementById("projetoSelect");
+    select.innerHTML="";
 
     res.projetos.forEach(p=>{
       if(projetosPermitidos.includes(String(p.id_projeto))){
         const opt = document.createElement("option");
         opt.value = p.id_projeto;
         opt.textContent = p.nome;
-        projetoSelect.appendChild(opt);
+        select.appendChild(opt);
       }
     });
 
@@ -251,63 +275,62 @@ function carregarProjetos(){
   });
 }
 
-// SELECIONAR
 function selecionarProjeto(){
-  projetoAtual = projetoSelect.value;
+  const select = document.getElementById("projetoSelect");
+  projetoAtual = select.value;
 
   chamarAPI({action:"getProjeto",id_projeto:projetoAtual}, res=>{
     const p = res.projeto;
 
-    document.body.style.background = `url('${p.background}') center/cover no-repeat`;
+    document.body.style.background = "url('" + p.background + "') center/cover no-repeat";
     document.getElementById("logoProjeto").src = p.logo;
-
-    const desc = document.getElementById("descricao");
-    desc.innerText = p.descricao || "";
+    document.getElementById("descricao").innerText = p.descricao || "";
   });
 
   carregarArquivos();
 }
 
-// MODAL
-function abrirModal(){ modal.style.display="flex"; }
-function fecharModal(){ modal.style.display="none"; }
+function abrirModal(){
+  document.getElementById("modal").style.display="flex";
+}
 
-// ICONES
+function fecharModal(){
+  document.getElementById("modal").style.display="none";
+}
+
 function selecionarIcone(el){
   document.querySelectorAll(".icon-picker i").forEach(i=>i.classList.remove("selected"));
   el.classList.add("selected");
   iconeSelecionado = el.className;
 }
 
-// ARQUIVOS
 function carregarArquivos(){
   chamarAPI({action:"getArquivos",projeto:projetoAtual}, res=>{
-    listaArquivos.innerHTML="";
+    const lista = document.getElementById("listaArquivos");
+    lista.innerHTML="";
 
     res.arquivos.forEach(a=>{
       const tr = document.createElement("tr");
 
-      tr.innerHTML = `
-        <td><i class="${a.icone}"></i> ${a.nome}</td>
-        <td>
-          <button onclick='editarArquivo(${JSON.stringify(a.nome)})'>✏️</button>
-          <button onclick='window.open(${JSON.stringify(a.link)})'>⬇️</button>
-          <button onclick='excluirArquivo(${JSON.stringify(a.nome)})'>🗑️</button>
-        </td>
-      `;
+      tr.innerHTML =
+        "<td><i class='" + a.icone + "'></i> " + a.nome + "</td>" +
+        "<td>" +
+        "<button onclick='editarArquivo(" + JSON.stringify(a.nome) + ")'>✏️</button>" +
+        "<button onclick='window.open(" + JSON.stringify(a.link) + ")'>⬇️</button>" +
+        "<button onclick='excluirArquivo(" + JSON.stringify(a.nome) + ")'>🗑️</button>" +
+        "</td>";
 
-      listaArquivos.appendChild(tr);
+      lista.appendChild(tr);
     });
   });
 }
 
-// SALVAR
 function salvar(){
   chamarAPI({
     action:"addArquivo",
     projeto:projetoAtual,
-    nome:nomeArquivo.value,
-    link:fileLink.value,
+    nome:document.getElementById("nomeArquivo").value,
+    link:document.getElementById("fileLink").value,
     icone:iconeSelecionado
   }, ()=>{
     fecharModal();
@@ -315,7 +338,6 @@ function salvar(){
   });
 }
 
-// EDITAR
 function editarArquivo(nome){
   const novo = prompt("Novo link:");
   if(!novo) return;
@@ -323,7 +345,6 @@ function editarArquivo(nome){
   chamarAPI({action:"addArquivo",projeto:projetoAtual,nome,link:novo,icone:iconeSelecionado}, carregarArquivos);
 }
 
-// EXCLUIR
 function excluirArquivo(nome){
   if(confirm("Excluir?")){
     chamarAPI({action:"deleteArquivo",projeto:projetoAtual,nome}, carregarArquivos);
