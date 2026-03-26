@@ -13,7 +13,7 @@ body{
   margin:0;
   font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
   background:#111;
-  color:#ffffff; /* ALTERE AQUI SE QUISER */
+  color:#ffffff;
 }
 
 .fade{
@@ -66,11 +66,12 @@ input, select{
 
 button{
   border:none;
-  padding:12px;
+  padding:8px 10px;
   border-radius:10px;
   cursor:pointer;
   background:rgba(255,255,255,0.15);
   color:#fff;
+  margin-right:5px;
 }
 
 button:hover{
@@ -317,7 +318,7 @@ function carregarArquivos(){
         "<td>" +
         "<button onclick='visualizarArquivo(" + JSON.stringify(a.link) + ")'>👁️</button>" +
         "<button onclick='editarArquivo(" + JSON.stringify(a.nome) + ")'>✏️</button>" +
-        "<button onclick='window.open(" + JSON.stringify(a.link) + ")'>⬇️</button>" +
+        "<button onclick='downloadArquivo(" + JSON.stringify(a.link) + ")'>⬇️</button>" +
         "<button onclick='excluirArquivo(" + JSON.stringify(a.nome) + ")'>🗑️</button>" +
         "</td>";
 
@@ -350,14 +351,14 @@ function excluirArquivo(nome){
   if(confirm("Excluir?")){
     chamarAPI({action:"deleteArquivo",projeto:projetoAtual,nome}, carregarArquivos);
   }
+}
+
 function visualizarArquivo(link){
   window.open(link, "_blank");
 }
 
 function downloadArquivo(link){
   window.open(link, "_blank");
- }
-  
 }
 </script>
 
