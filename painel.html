@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="icon" href="https://raw.githubusercontent.com/marcosns/NexTag/main/favicon.ico">
-
 <title>Painel NexTag</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -16,10 +15,10 @@ body{
   margin:0;
   font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
   background:#111;
-  background-size:cover;
   color:#fff;
 }
 
+/* container */
 .container{
   max-width:900px;
   margin:40px auto;
@@ -27,21 +26,23 @@ body{
   border-radius:20px;
   background:rgba(255,255,255,0.08);
   backdrop-filter:blur(20px);
-  box-shadow:0 10px 40px rgba(0,0,0,0.3);
 }
 
-#logo{
+/* logo principal */
+.logo-main{
   display:block;
-  margin:0 auto 10px;
+  margin:0 auto 20px;
+  max-width:160px;
+}
+
+/* logo projeto */
+#logoProjeto{
+  display:block;
+  margin:10px auto;
   max-height:80px;
 }
 
-#descricao{
-  text-align:center;
-  opacity:0.8;
-  margin-bottom:20px;
-}
-
+/* inputs */
 input, select{
   width:100%;
   padding:12px;
@@ -52,6 +53,7 @@ input, select{
   color:#fff;
 }
 
+/* botões */
 button{
   border:none;
   padding:12px;
@@ -59,38 +61,46 @@ button{
   cursor:pointer;
   background:rgba(255,255,255,0.15);
   color:#fff;
-  transition:0.2s;
 }
 
 button:hover{
   background:rgba(255,255,255,0.25);
 }
 
-.btn{
-  width:36px;
-  height:36px;
-  margin-right:5px;
-}
-
+/* tabela */
 table{
   width:100%;
   margin-top:20px;
-  border-collapse:collapse;
 }
 
 td{
-  padding:12px;
-  border-bottom:1px solid rgba(255,255,255,0.1);
+  padding:10px;
 }
 
-#loginDiv{
-  margin-top:20px;
+/* icones */
+.icon-picker{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:10px 0;
 }
 
+.icon-picker i{
+  font-size:18px;
+  padding:10px;
+  border-radius:10px;
+  background:rgba(255,255,255,0.1);
+  cursor:pointer;
+}
+
+.icon-picker i.selected{
+  background:#4CAF50;
+}
+
+/* footer */
 .footer{
   text-align:center;
   margin-top:20px;
-  font-size:12px;
   opacity:0.6;
 }
 </style>
@@ -101,18 +111,42 @@ td{
 
 <div class="container">
 
-<!-- PAINEL (ESCONDIDO ATÉ LOGIN) -->
+<!-- LOGIN -->
+<div id="loginDiv">
+
+<img class="logo-main" src="https://raw.githubusercontent.com/marcosns/NexTag/main/nextag_logo.png">
+
+<input id="usuario" placeholder="Usuário">
+<input id="senha" type="password" placeholder="Senha">
+<button onclick="login()" style="width:100%">Entrar</button>
+
+</div>
+
+<!-- PAINEL -->
 <div id="painel" style="display:none;">
 
-<img id="logo">
+<img class="logo-main" src="https://raw.githubusercontent.com/marcosns/NexTag/main/nextag_logo.png">
+
+<img id="logoProjeto">
 <p id="descricao"></p>
+
+<input id="logoInput" placeholder="Link do logo do projeto">
 
 <select id="projetoSelect" onchange="selecionarProjeto()"></select>
 
 <input id="nomeArquivo" placeholder="Nome do arquivo">
 <input id="fileLink" placeholder="Link do arquivo">
 
-<button onclick="salvar()" style="width:100%;">Salvar</button>
+<!-- ÍCONES -->
+<div class="icon-picker" id="icons">
+  <i class="fas fa-file" onclick="selecionarIcone(this)"></i>
+  <i class="fas fa-image" onclick="selecionarIcone(this)"></i>
+  <i class="fas fa-folder" onclick="selecionarIcone(this)"></i>
+  <i class="fas fa-drafting-compass" onclick="selecionarIcone(this)"></i>
+  <i class="fas fa-phone" onclick="selecionarIcone(this)"></i>
+</div>
+
+<button onclick="salvar()" style="width:100%">Salvar</button>
 
 <table>
   <tbody id="listaArquivos"></tbody>
@@ -120,16 +154,7 @@ td{
 
 </div>
 
-<!-- LOGIN -->
-<div id="loginDiv">
-  <input id="usuario" placeholder="Usuário">
-  <input id="senha" placeholder="Senha" type="password">
-  <button onclick="login()" style="width:100%;">Entrar</button>
-</div>
-
-<div class="footer">
-  Propriedade da NexTag ©
-</div>
+<div class="footer">NexTag ©</div>
 
 </div>
 
@@ -138,185 +163,127 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyraD4enQmA7_SHdMfD7vQT
 
 let projetosPermitidos = [];
 let projetoAtual = null;
-let usuarioLogado = null;
 let iconeSelecionado = "fas fa-file";
 
-// JSONP CORRIGIDO
+// JSONP
 function chamarAPI(params, callback){
   const cb = "cb_" + Date.now();
   const script = document.createElement("script");
 
   window[cb] = function(data){
-    console.log("RET:", data);
     callback(data);
-
     delete window[cb];
     script.remove();
   };
 
-  script.src = `${API_URL}?${new URLSearchParams(params)}&callback=${cb}&nocache=${Date.now()}`;
-
-  script.onerror = () => {
-    console.error("Erro ao chamar API");
-    delete window[cb];
-    script.remove();
-  };
-
+  script.src = `${API_URL}?${new URLSearchParams(params)}&callback=${cb}`;
   document.body.appendChild(script);
 }
 
 // LOGIN
 function login(){
-  const usuario = document.getElementById("usuario").value;
-  const senha = document.getElementById("senha").value;
+  const usuario = usuario.value;
+  const senha = senha.value;
 
-  chamarAPI({action:"login",usuario,senha}, function(res){
-
+  chamarAPI({action:"login",usuario,senha}, res=>{
     if(res.ok){
-      usuarioLogado = usuario;
       projetosPermitidos = res.projetos;
-
-      document.getElementById("loginDiv").style.display="none";
-      document.getElementById("painel").style.display="block";
-
+      loginDiv.style.display="none";
+      painel.style.display="block";
       carregarProjetos();
-    }else{
-      alert(res.erro);
-    }
+    } else alert("Login inválido");
   });
 }
 
 // PROJETOS
 function carregarProjetos(){
-  chamarAPI({action:"getProjetos"}, function(res){
+  chamarAPI({action:"getProjetos"}, res=>{
+    projetoSelect.innerHTML="";
 
-    const select = document.getElementById("projetoSelect");
-    select.innerHTML = "";
-
-    (res.projetos || []).forEach(p=>{
+    res.projetos.forEach(p=>{
       if(projetosPermitidos.includes(String(p.id_projeto))){
-
         const opt = document.createElement("option");
         opt.value = p.id_projeto;
         opt.textContent = p.nome;
-
-        select.appendChild(opt);
+        projetoSelect.appendChild(opt);
       }
     });
 
-    if(select.options.length > 0){
-      select.selectedIndex = 0;
-      selecionarProjeto();
-    }
+    selecionarProjeto();
   });
 }
 
-// SELECIONAR PROJETO
+// SELECIONAR
 function selecionarProjeto(){
-  const id = document.getElementById("projetoSelect").value;
-  projetoAtual = id;
+  projetoAtual = projetoSelect.value;
 
-  chamarAPI({action:"getProjeto",id_projeto:id}, function(res){
-
-    if(!res.projeto) return;
-
+  chamarAPI({action:"getProjeto",id_projeto:projetoAtual}, res=>{
     const p = res.projeto;
 
-    if(p.background){
-      document.body.style.background = `url('${p.background}') center/cover no-repeat`;
-    }
-
-    document.getElementById("logo").src = p.logo || "";
-    document.getElementById("descricao").innerText = p.descricao || "";
+    document.body.style.background = `url('${p.background}') center/cover no-repeat`;
+    logoProjeto.src = p.logo;
+    descricao.innerText = p.descricao;
+    logoInput.value = p.logo;
   });
 
   carregarArquivos();
 }
 
-// LISTAR ARQUIVOS
+// ICONES
+function selecionarIcone(el){
+  document.querySelectorAll(".icon-picker i").forEach(i=>i.classList.remove("selected"));
+  el.classList.add("selected");
+  iconeSelecionado = el.className;
+}
+
+// ARQUIVOS
 function carregarArquivos(){
-  chamarAPI({action:"getArquivos",projeto:projetoAtual}, function(res){
+  chamarAPI({action:"getArquivos",projeto:projetoAtual}, res=>{
+    listaArquivos.innerHTML="";
 
-    const tabela = document.getElementById("listaArquivos");
-    tabela.innerHTML = "";
-
-    (res.arquivos || []).forEach(a=>{
-
+    res.arquivos.forEach(a=>{
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
-        <td><i class="${a.icone || 'fas fa-file'}"></i> ${a.nome}</td>
+        <td><i class="${a.icone}"></i> ${a.nome}</td>
         <td>
-          <button class="btn" onclick='editarArquivo(${JSON.stringify(a.nome)})'>
-            <i class="fas fa-pen"></i>
-          </button>
-
-          <button class="btn" onclick='window.open(${JSON.stringify(a.link)})'>
-            <i class="fas fa-download"></i>
-          </button>
-
-          <button class="btn" onclick='excluirArquivo(${JSON.stringify(a.nome)})'>
-            <i class="fas fa-trash"></i>
-          </button>
+          <button onclick='editarArquivo(${JSON.stringify(a.nome)})'>✏️</button>
+          <button onclick='window.open(${JSON.stringify(a.link)})'>⬇️</button>
+          <button onclick='excluirArquivo(${JSON.stringify(a.nome)})'>🗑️</button>
         </td>
       `;
 
-      tabela.appendChild(tr);
+      listaArquivos.appendChild(tr);
     });
   });
 }
 
 // SALVAR
 function salvar(){
-  if(!projetoAtual){
-    alert("Selecione um projeto");
-    return;
-  }
-
-  const nome = document.getElementById("nomeArquivo").value;
-  const link = document.getElementById("fileLink").value;
-
   chamarAPI({
     action:"addArquivo",
     projeto:projetoAtual,
-    nome,
-    link,
+    nome:nomeArquivo.value,
+    link:fileLink.value,
     icone:iconeSelecionado
-  }, function(res){
-    if(res.ok){
-      carregarArquivos();
-      alert("Salvo!");
-    }
+  }, ()=>{
+    carregarArquivos();
   });
 }
 
 // EDITAR
 function editarArquivo(nome){
-  const novoLink = prompt("Novo link:");
-  if(!novoLink) return;
+  const novo = prompt("Novo link:");
+  if(!novo) return;
 
-  chamarAPI({
-    action:"addArquivo",
-    projeto:projetoAtual,
-    nome,
-    link:novoLink,
-    icone:iconeSelecionado
-  }, function(){
-    carregarArquivos();
-  });
+  chamarAPI({action:"addArquivo",projeto:projetoAtual,nome,link:novo,icone:iconeSelecionado}, carregarArquivos);
 }
 
 // EXCLUIR
 function excluirArquivo(nome){
-  if(!confirm("Excluir?")) return;
-
-  chamarAPI({
-    action:"deleteArquivo",
-    projeto:projetoAtual,
-    nome
-  }, function(){
-    carregarArquivos();
-  });
+  if(confirm("Excluir?")){
+    chamarAPI({action:"deleteArquivo",projeto:projetoAtual,nome}, carregarArquivos);
+  }
 }
 </script>
 
