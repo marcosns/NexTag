@@ -47,16 +47,6 @@ body{
   font-size:12px;
 }
 
-input, select{
-  width:100%;
-  padding:12px;
-  margin:8px 0;
-  border:none;
-  border-radius:10px;
-  background:rgba(255,255,255,0.1);
-  color:#fff;
-}
-
 button{
   border:none;
   padding:8px;
@@ -162,10 +152,7 @@ td{
 
 <div style="display:flex; justify-content:space-between; margin-top:20px;">
   <h3>Arquivos</h3>
-  <div>
-    <button onclick="abrirHistorico()">📜 Histórico</button>
-    <button onclick="abrirModal()">+ Adicionar</button>
-  </div>
+  <button onclick="abrirModal()">+ Adicionar</button>
 </div>
 
 <table>
@@ -234,14 +221,19 @@ function login(){
 
       projetosPermitidos = res.projetos;
 
-      // 🔥 AQUI: aplica logo e background do usuário
-      document.body.style.background = "url('" + res.background + "') center/cover no-repeat";
-      document.getElementById("logoProjeto").src = res.logo;
+      // 🔥 PROTEÇÃO NULL
+      if(res.background){
+        document.body.style.background = "url('" + res.background + "') center/cover no-repeat";
+      }
+
+      if(res.logo){
+        document.getElementById("logoProjeto").src = res.logo;
+      }
 
       localStorage.setItem("user", usuario);
       localStorage.setItem("projetos", JSON.stringify(res.projetos));
-      localStorage.setItem("logo", res.logo);
-      localStorage.setItem("background", res.background);
+      localStorage.setItem("logo", res.logo || "");
+      localStorage.setItem("background", res.background || "");
 
       document.getElementById("loginDiv").style.display="none";
       document.getElementById("painel").style.display="block";
@@ -261,8 +253,16 @@ window.onload = function(){
   if(user && proj){
     projetosPermitidos = JSON.parse(proj);
 
-    document.body.style.background = "url('" + localStorage.getItem("background") + "') center/cover no-repeat";
-    document.getElementById("logoProjeto").src = localStorage.getItem("logo");
+    const bg = localStorage.getItem("background");
+    const logo = localStorage.getItem("logo");
+
+    if(bg){
+      document.body.style.background = "url('" + bg + "') center/cover no-repeat";
+    }
+
+    if(logo){
+      document.getElementById("logoProjeto").src = logo;
+    }
 
     document.getElementById("loginDiv").style.display="none";
     document.getElementById("painel").style.display="block";
@@ -368,11 +368,6 @@ function excluirArquivo(nome){
   if(confirm("Excluir?")){
     chamarAPI({action:"deleteArquivo",projeto:projetoAtual,nome}, carregarArquivos);
   }
-}
-
-// HISTÓRICO (GERAL DO PROJETO)
-function abrirHistorico(){
-  alert("Histórico geral do projeto (implementar integração com aba Historico)");
 }
 </script>
 
