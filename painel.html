@@ -7,7 +7,6 @@
 <title>Painel NexTag</title>
 
 <link rel="icon" href="https://raw.githubusercontent.com/marcosns/NexTag/main/favicon.ico">
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
@@ -42,7 +41,7 @@ body{
 
 .top{
   display:flex;
-  justify-content:flex-end;
+  justify-content:space-between;
 }
 
 .logout{
@@ -159,7 +158,14 @@ td{
 <div id="painel" style="display:none;">
 
 <div class="top">
+
+  <div style="display:flex; gap:8px;">
+    <button onclick="abrirHistorico()">📜</button>
+    <button onclick="abrirInstrucoes()">❓</button>
+  </div>
+
   <button class="logout" onclick="logout()">Sair</button>
+
 </div>
 
 <img class="logo-main"
@@ -168,18 +174,11 @@ src="https://raw.githubusercontent.com/marcosns/NexTag/main/nextag_logo.png">
 
 <img id="logoProjeto">
 
-<p style="text-align:center;">Selecione o projeto</p>
 <select id="projetoSelect" onchange="selecionarProjeto()"></select>
 
-<!-- 🔥 BOTÃO ADICIONAR VOLTOU -->
-  <div class="header-arquivos">
+<div class="header-arquivos">
   <h3>Arquivos</h3>
-
-  <div style="display:flex; gap:8px;">
-    <button onclick="abrirHistorico()">📜</button>
-    <button onclick="abrirInstrucoes()">❓</button>
-    <button onclick="abrirModal()">+ Adicionar</button>
-  </div>
+  <button onclick="abrirModal()">+ Adicionar</button>
 </div>
 
 <table>
@@ -203,14 +202,9 @@ src="https://raw.githubusercontent.com/marcosns/NexTag/main/nextag_logo.png">
 <p>Selecione o ícone:</p>
 <div class="icon-picker">
 <i class="fas fa-file" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-regular fa-file-pdf" onclick="selecionarIcone(this)"></i>
 <i class="fas fa-image" onclick="selecionarIcone(this)"></i>
 <i class="fas fa-folder" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-solid fa-shield-halved" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-address-book" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-book" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-calendar" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-compass-drafting" onclick="selecionarIcone(this)"></i>
+<i class="fas fa-phone" onclick="selecionarIcone(this)"></i>
 </div>
 
 <input id="fileLink" placeholder="Cole o link do arquivo">
@@ -220,6 +214,32 @@ src="https://raw.githubusercontent.com/marcosns/NexTag/main/nextag_logo.png">
 <button onclick="fecharModal()">Cancelar</button>
 
 </div>
+</div>
+
+<!-- HISTORICO -->
+<div class="modal" id="modalHistorico">
+  <div class="modal-content">
+    <h3>Histórico do Projeto</h3>
+    <div id="conteudoHistorico"></div>
+    <br>
+    <button onclick="fecharHistorico()">Fechar</button>
+  </div>
+</div>
+
+<!-- INSTRUCOES -->
+<div class="modal" id="modalInstrucoes">
+  <div class="modal-content">
+    <h3>Instruções NexTag</h3>
+
+    <div style="font-size:14px;">
+    Use este painel para gerenciar arquivos do cliente.
+    Links aceitos: Google Drive, OneDrive, SharePoint ou URL pública.
+    Certifique-se que o acesso está liberado.
+    </div>
+
+    <br>
+    <button onclick="fecharInstrucoes()">Fechar</button>
+  </div>
 </div>
 
 <script>
@@ -264,58 +284,12 @@ function login(){
     }else{
       alert("Login inválido");
     }
-
-    /* HISTORICO */
-function abrirHistorico(){
-  document.getElementById("modalHistorico").style.display="flex";
-
-  chamarAPI({action:"getHistorico", projeto:projetoAtual}, res=>{
-    const div = document.getElementById("conteudoHistorico");
-    div.innerHTML = "";
-
-    if(!res.historico || res.historico.length === 0){
-      div.innerHTML = "Sem histórico ainda.";
-      return;
-    }
-
-    res.historico.reverse().forEach(h=>{
-      const item = document.createElement("div");
-
-      item.style.borderBottom="1px solid #444";
-      item.style.padding="8px";
-
-      item.innerHTML = `
-        <b>${h.acao}</b><br>
-        ${h.nome}<br>
-        <small>${h.data}</small>
-      `;
-
-      div.appendChild(item);
-    });
   });
 }
 
-function fecharHistorico(){
-  document.getElementById("modalHistorico").style.display="none";
-}
-
-/* INSTRUCOES */
-function abrirInstrucoes(){
-  document.getElementById("modalInstrucoes").style.display="flex";
-}
-
-function fecharInstrucoes(){
-  document.getElementById("modalInstrucoes").style.display="none";
-}
-  });
-}
-
-/* VISUAL USUARIO */
+/* VISUAL */
 function aplicarVisualUsuario(data){
-  if(data.logo){
-    document.getElementById("logoProjeto").src = data.logo;
-  }
-
+  if(data.logo) logoProjeto.src = data.logo;
   if(data.background){
     document.body.style.background =
       `url('${data.background}') center/cover no-repeat`;
@@ -350,6 +324,12 @@ function carregarProjetos(){
   chamarAPI({action:"getProjetos"}, res=>{
     projetoSelect.innerHTML="";
 
+    const placeholder = document.createElement("option");
+    placeholder.text = "Selecione o projeto";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    projetoSelect.add(placeholder);
+
     res.projetos.forEach(p=>{
       if(projetosPermitidos.includes(String(p.id_projeto))){
         const opt = document.createElement("option");
@@ -358,12 +338,11 @@ function carregarProjetos(){
         projetoSelect.appendChild(opt);
       }
     });
-
-    selecionarProjeto();
   });
 }
 
 function selecionarProjeto(){
+  if(!projetoSelect.value) return;
   projetoAtual = projetoSelect.value;
   carregarArquivos();
 }
@@ -391,13 +370,8 @@ function carregarArquivos(){
 }
 
 /* MODAL */
-function abrirModal(){
-  modal.style.display="flex";
-}
-
-function fecharModal(){
-  modal.style.display="none";
-}
+function abrirModal(){ modal.style.display="flex"; }
+function fecharModal(){ modal.style.display="none"; }
 
 /* ICONE */
 function selecionarIcone(el){
@@ -411,8 +385,8 @@ function salvar(){
   chamarAPI({
     action:"addArquivo",
     projeto:projetoAtual,
-    nome:document.getElementById("nomeArquivo").value,
-    link:document.getElementById("fileLink").value,
+    nome:nomeArquivo.value,
+    link:fileLink.value,
     icone:iconeSelecionado
   }, ()=>{
     fecharModal();
@@ -425,68 +399,35 @@ function editarArquivo(nome){
   const novo = prompt("Novo link:");
   if(!novo) return;
 
-  chamarAPI({
-    action:"addArquivo",
-    projeto:projetoAtual,
-    nome,
-    link:novo
-  }, carregarArquivos);
+  chamarAPI({action:"addArquivo",projeto:projetoAtual,nome,link:novo}, carregarArquivos);
 }
 
 /* EXCLUIR */
 function excluirArquivo(nome){
   if(confirm("Excluir?")){
-    chamarAPI({
-      action:"deleteArquivo",
-      projeto:projetoAtual,
-      nome
-    }, carregarArquivos);
+    chamarAPI({action:"deleteArquivo",projeto:projetoAtual,nome}, carregarArquivos);
   }
 }
+
+/* HISTORICO */
+function abrirHistorico(){
+  modalHistorico.style.display="flex";
+
+  chamarAPI({action:"getHistorico", projeto:projetoAtual}, res=>{
+    conteudoHistorico.innerHTML = "";
+
+    (res.historico || []).forEach(h=>{
+      conteudoHistorico.innerHTML += `<div>${h.nome} - ${h.acao}</div>`;
+    });
+  });
+}
+function fecharHistorico(){ modalHistorico.style.display="none"; }
+
+/* INSTRUCOES */
+function abrirInstrucoes(){ modalInstrucoes.style.display="flex"; }
+function fecharInstrucoes(){ modalInstrucoes.style.display="none"; }
+
 </script>
-<!-- HISTORICO -->
-<div class="modal" id="modalHistorico">
-  <div class="modal-content">
-    <h3>Histórico do Projeto</h3>
-    <div id="conteudoHistorico" style="max-height:300px; overflow:auto;"></div>
-    <br>
-    <button onclick="fecharHistorico()">Fechar</button>
-  </div>
-</div>
 
-<!-- INSTRUCOES -->
-<div class="modal" id="modalInstrucoes">
-  <div class="modal-content">
-    <h3>Instruções NexTag</h3>
-
-    <div style="font-size:14px; line-height:1.5">
-
-Instruções do NexTag, neste link você pode adicionar, alterar e excluir os links que o cliente tem acesso ao ler o NexTag pelo celular.
-
-Links compartilhados aceitos:
-
-✔ Google Drive → funciona direto  
-✔ OneDrive → funciona direto  
-✔ SharePoint → funciona direto  
-✔ Qualquer URL pública → funciona  
-
-⚠️ Único ponto de atenção:
-
-O link precisa estar com permissão de acesso:
-
-Google Drive → “Qualquer pessoa com o link”  
-OneDrive → “Anyone with the link”  
-SharePoint → acesso liberado  
-
-<br><br>
-Caso tenha dúvidas envie um email para:<br>
-<b>3di.printer3d@gmail.com</b>
-
-    </div>
-
-    <br>
-    <button onclick="fecharInstrucoes()">Fechar</button>
-  </div>
-</div>
 </body>
 </html>
