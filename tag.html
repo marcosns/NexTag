@@ -1,32 +1,29 @@
 <!DOCTYPE html> 
 <html lang="pt-br">
 <head>
+
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>NexTag</title>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<style>
-body{
-  margin:0;
-  font-family:Arial;
-  color:white;
-  background-size:cover;
-  background-position:center;
-}
-<!-- ✅ FAVICON CORRIGIDO -->
+<!-- ✅ FAVICON -->
 <link rel="icon" href="https://raw.githubusercontent.com/marcosns/NexTag/main/favicon.ico">
 
+<!-- ICONES -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
 body{
   margin:0;
   font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+  color:white;
   background:#111;
-  color:#ffffff;
+  background-size:cover;
+  background-position:center;
 }
-/* efeito vidro */
+
+/* vidro */
 .container{
   backdrop-filter: blur(12px);
   background: rgba(0,0,0,0.4);
@@ -34,30 +31,43 @@ body{
   padding:30px;
   width:90%;
   max-width:500px;
-  margin:50px auto;
+  margin:40px auto;
   text-align:center;
 }
 
+/* logo */
+#logo{
+  max-width:180px;
+  margin-bottom:10px;
+}
+
+/* links */
 a{
-  display:block;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  justify-content:center;
+
   background:rgba(255,255,255,0.1);
   padding:12px;
   margin:10px 0;
   border-radius:10px;
   text-decoration:none;
   color:white;
+  font-size:15px;
 }
 
 a:hover{
   background:rgba(255,255,255,0.2);
 }
 </style>
+
 </head>
 
 <body>
 
 <div class="container">
-  <img id="logo" style="max-width:180px"><br><br>
+  <img id="logo">
   <h2 id="nome"></h2>
   <p id="descricao"></p>
 
@@ -67,21 +77,18 @@ a:hover{
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbyraD4enQmA7_SHdMfD7vQT8fQc9WjlaBHuskkRoM3tJm3S0SSgjJwUYyRSh3gNvlW1ng/exec";
 
-// JSONP CORRIGIDO
+/* JSONP */
 function chamarAPI(params, callback){
   const cb = "cb_" + Date.now();
-
   const script = document.createElement("script");
 
   window[cb] = function(data){
     callback(data);
-
-    // limpeza correta
     delete window[cb];
     script.remove();
   };
 
-  script.src = `${API_URL}?${new URLSearchParams(params)}&callback=${cb}&nocache=${Date.now()}`;
+  script.src = API_URL + "?" + new URLSearchParams(params) + "&callback=" + cb + "&nocache=" + Date.now();
 
   script.onerror = () => {
     console.error("Erro na API");
@@ -92,12 +99,13 @@ function chamarAPI(params, callback){
   document.body.appendChild(script);
 }
 
-// pega ID da URL
+/* pega ID */
 function getProjeto(){
   const url = new URLSearchParams(window.location.search);
   return url.get("id");
 }
 
+/* carregar tudo */
 function carregar(){
 
   const projeto = getProjeto();
@@ -107,7 +115,23 @@ function carregar(){
     return;
   }
 
-  // 🔹 PROJETO (CORRIGIDO)
+  /* 🔥 NOVO: VISUAL DO USUARIO */
+  chamarAPI({
+    action:"getVisualProjeto",
+    projeto
+  }, function(data){
+
+    if(data.logo){
+      document.getElementById("logo").src = data.logo;
+    }
+
+    if(data.background){
+      document.body.style.backgroundImage = "url('" + data.background + "')";
+    }
+
+  });
+
+  /* 🔹 PROJETO */
   chamarAPI({
     action:"getProjeto",
     id_projeto: projeto
@@ -117,16 +141,11 @@ function carregar(){
 
     const p = data.projeto;
 
-    if(p.background){
-      document.body.style.backgroundImage = `url('${p.background}')`;
-    }
-
-    document.getElementById("logo").src = p.logo || "";
     document.getElementById("nome").innerText = p.nome || "";
     document.getElementById("descricao").innerText = p.descricao || "";
   });
 
-  // 🔹 ARQUIVOS (CORRIGIDO)
+  /* 🔹 ARQUIVOS */
   chamarAPI({
     action:"getArquivos",
     projeto
@@ -139,10 +158,13 @@ function carregar(){
 
       const div = document.createElement("a");
 
-      div.href = a.link; // ✅ usa link direto
+      div.href = a.link;
       div.target = "_blank";
 
-      div.innerHTML = `<i class="${a.icone || 'fas fa-file'}"></i> ${a.nome}`;
+      div.innerHTML = `
+        <i class="${a.icone || 'fas fa-file'}"></i>
+        ${a.nome}
+      `;
 
       lista.appendChild(div);
     });
