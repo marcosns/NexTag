@@ -117,17 +117,23 @@ function carregar(){
 
   /* 🔥 NOVO: VISUAL DO USUARIO */
   chamarAPI({
-    action:"getVisualProjeto",
-    projeto
-  }, function(data){
+ function getVisualProjeto(data, callback){
 
-    if(data.logo){
-      document.getElementById("logo").src = data.logo;
-    }
+  const sheet = getSheet("project");
+  const rows = sheet.getDataRange().getValues();
 
-    if(data.background){
-      document.body.style.backgroundImage = "url('" + data.background + "')";
-    }
+  const proj = rows.find(r => r[0] == data.projeto);
+
+  if(!proj){
+    return resposta({ ok:false }, callback);
+  }
+
+  return resposta({
+    ok:true,
+    logo: proj[3],
+    background: proj[4]
+  }, callback);
+}
 
   });
 
