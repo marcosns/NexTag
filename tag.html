@@ -116,26 +116,28 @@ function carregar(){
   }
 
   /* 🔥 NOVO: VISUAL DO USUARIO */
-  chamarAPI({
- function getVisualProjeto(data, callback){
+/* 🔹 PROJETO */
+chamarAPI({
+  action:"getProjeto",
+  id_projeto: projeto
+}, function(data){
 
-  const sheet = getSheet("project");
-  const rows = sheet.getDataRange().getValues();
+  if(!data.projeto) return;
 
-  const proj = rows.find(r => r[0] == data.projeto);
+  const p = data.projeto;
 
-  if(!proj){
-    return resposta({ ok:false }, callback);
+  // 🔥 AQUI ESTAVA FALTANDO ISSO
+  if(p.background){
+    document.body.style.backgroundImage = `url('${p.background}')`;
   }
 
-  return resposta({
-    ok:true,
-    logo: proj[3],
-    background: proj[4]
-  }, callback);
-}
+  if(p.logo){
+    document.getElementById("logo").src = p.logo;
+  }
 
-  });
+  document.getElementById("nome").innerText = p.nome || "";
+  document.getElementById("descricao").innerText = p.descricao || "";
+});
 
   /* 🔹 PROJETO */
   chamarAPI({
