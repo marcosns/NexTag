@@ -1,8 +1,98 @@
+```html
 <!DOCTYPE html>
-</script>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexTag</title>
+
+<link rel="icon" href="https://raw.githubusercontent.com/marcosns/NexTag/main/favicon.ico">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+  color:white;
+  background:#111;
+  background-size:cover;
+  background-position:center;
+}
+
+#loginBox{
+  text-align:center;
+  margin-top:80px;
+}
+
+input{
+  padding:10px;
+  margin:5px;
+  border-radius:8px;
+  border:none;
+  width:200px;
+}
+
+button{
+  padding:10px 20px;
+  border:none;
+  border-radius:8px;
+  background:#00c3ff;
+  color:white;
+  cursor:pointer;
+}
+
+.container{
+  display:none;
+  backdrop-filter: blur(12px);
+  background: rgba(0,0,0,0.4);
+  border-radius:20px;
+  padding:30px;
+  width:90%;
+  max-width:500px;
+  margin:40px auto;
+  text-align:center;
+}
+
+#logo{
+  max-width:180px;
+  margin-bottom:10px;
+}
+
+a{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  justify-content:center;
+  background:rgba(255,255,255,0.1);
+  padding:12px;
+  margin:10px 0;
+  border-radius:10px;
+  text-decoration:none;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div id="loginBox">
+  <h2>Acesso restrito</h2>
+  <input id="usuario" placeholder="Usuário"><br>
+  <input id="senha" type="password" placeholder="Senha"><br>
+  <button onclick="fazerLogin()">Entrar</button>
+  <p id="erro" style="color:red;"></p>
+</div>
+
+<div class="container">
+  <img id="logo">
+  <h2 id="nome"></h2>
+  <p id="descricao"></p>
+  <div id="lista"></div>
+</div>
+
+<script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwJzJYMMr9DDc7yqNvq-jXz9pNy1o0WcbgVfto_fgy5YppuEPHmclXxKuquexU0YeE4sA/exec";
 
-/* JSONP */
 function chamarAPI(params, callback){
   const cb = "cb_" + Date.now();
   const script = document.createElement("script");
@@ -15,24 +105,14 @@ function chamarAPI(params, callback){
 
   script.src = API_URL + "?" + new URLSearchParams(params) + "&callback=" + cb + "&nocache=" + Date.now();
 
-  script.onerror = () => {
-    console.error("Erro na API");
-    delete window[cb];
-    script.remove();
-  };
-
   document.body.appendChild(script);
 }
 
-/* pega ID */
 function getProjeto(){
-  const url = new URLSearchParams(window.location.search);
-  return url.get("id");
+  return new URLSearchParams(window.location.search).get("id");
 }
 
-/* 🔐 LOGIN */
 function fazerLogin(){
-
   const usuario = document.getElementById("usuario").value;
   const senha = document.getElementById("senha").value;
 
@@ -53,16 +133,14 @@ function fazerLogin(){
   });
 }
 
-/* 🚀 INICIAR */
 function iniciarSistema(){
-
   const user = JSON.parse(localStorage.getItem("user"));
   const projeto = getProjeto();
 
   if(!user) return;
 
   if(!user.projetos.includes(projeto)){
-    alert("Você não tem acesso a este projeto");
+    alert("Sem acesso");
     return;
   }
 
@@ -72,91 +150,51 @@ function iniciarSistema(){
   carregar();
 }
 
-/* 🔹 CARREGAR DADOS */
 function carregar(){
 
   const projeto = getProjeto();
 
-  if(!projeto){
-    alert("Projeto não informado na URL");
-    return;
-  }
-
-  // 🔥 RESET VISUAL
   document.getElementById("lista").innerHTML = "";
-  document.getElementById("logo").src = "";
-  document.getElementById("nome").innerText = "";
-  document.getElementById("descricao").innerText = "";
   document.body.style.backgroundImage = "";
 
-  /* 🔹 PROJETO */
-  chamarAPI({
-    action:"getProjeto",
-    id_projeto: projeto
-  }, function(data){
-
-    if(!data.projeto) return;
-
-    const p = data.projeto;
-
-    document.getElementById("nome").innerText = p.nome || "";
-    document.getElementById("descricao").innerText = p.descricao || "";
-  });
-
-  /* 🔹 VISUAL (USUÁRIO) */
-  chamarAPI({
-    action:"getVisualProjeto",
-    projeto: projeto
-  }, function(data){
-
-    if(!data.ok) return;
-
-    if(data.background){
-      document.body.style.backgroundImage = `url('${data.background}')`;
-    }
-
-    if(data.logo){
-      document.getElementById("logo").src = data.logo;
+  chamarAPI({ action:"getProjeto", id_projeto: projeto }, data=>{
+    if(data.projeto){
+      document.getElementById("nome").innerText = data.projeto.nome || "";
+      document.getElementById("descricao").innerText = data.projeto.descricao || "";
     }
   });
 
-  /* 🔹 ARQUIVOS */
-  chamarAPI({
-    action:"getArquivos",
-    projeto
-  }, function(data){
+  chamarAPI({ action:"getVisualProjeto", projeto }, data=>{
+    if(data.ok){
+      if(data.background){
+        document.body.style.backgroundImage = `url('${data.background}')`;
+      }
+      if(data.logo){
+        document.getElementById("logo").src = data.logo;
+      }
+    }
+  });
 
+  chamarAPI({ action:"getArquivos", projeto }, data=>{
     const lista = document.getElementById("lista");
     lista.innerHTML = "";
 
-    (data.arquivos || []).forEach(a => {
-
-      const div = document.createElement("a");
-
-      div.href = a.link;
-      div.target = "_blank";
-
-      div.innerHTML = `
-        <i class="${a.icone || 'fas fa-file'}"></i>
-        ${a.nome}
-      `;
-
-      lista.appendChild(div);
+    (data.arquivos || []).forEach(a=>{
+      const link = document.createElement("a");
+      link.href = a.link;
+      link.target = "_blank";
+      link.innerHTML = `<i class="${a.icone || 'fas fa-file'}"></i> ${a.nome}`;
+      lista.appendChild(link);
     });
-
   });
 }
 
-/* 🔄 INIT */
-window.onload = function(){
-
-  document.querySelector(".container").style.display = "none";
-
+window.onload = ()=>{
   const user = localStorage.getItem("user");
-
-  if(user){
-    iniciarSistema();
-  }
+  if(user) iniciarSistema();
 };
 </script>
+
+</body>
+</html>
 ```
