@@ -277,8 +277,15 @@ function login(){
   const usuario = document.getElementById("usuario").value;
   const senha = document.getElementById("senha").value;
 
-  chamarAPI({action:"login",usuario,senha}, res=>{
+  chamarAPI({
+    action:"login",
+    usuario,
+    senha,
+    tipo: "painel" // 🔥 NOVO
+  }, res=>{
+
     if(res.ok){
+
       projetosPermitidos = res.projetos;
 
       localStorage.setItem("userData", JSON.stringify(res));
@@ -289,9 +296,11 @@ function login(){
       painel.style.display="block";
 
       carregarProjetos();
+
     }else{
-      alert("Login inválido");
+      alert(res.erro || "Login inválido");
     }
+
   });
 }
 
