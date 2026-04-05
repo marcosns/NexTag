@@ -146,10 +146,11 @@ function fazerLogin(){
   const senha = document.getElementById("senha").value;
 
   chamarAPI({
-    action:"login",
-    usuario,
-    senha
-  }, function(res){
+  action:"login",
+  usuario,
+  senha,
+  tipo: "tag" // 🔥 aqui está a mudança
+}, function(res){
 
     if(res.ok){
 
