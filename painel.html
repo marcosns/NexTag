@@ -1,98 +1,27 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<title>NexTag Login</title>
-
-<link rel="icon" href="favicon.ico">
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-<style>
-body{
-  margin:0;
-  height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:url('fundo6.jpg') center/cover no-repeat;
-  font-family:Arial;
-}
-
-.login-box{
-  background:rgba(0,0,0,0.6);
-  padding:40px;
-  border-radius:12px;
-  text-align:center;
-  width:300px;
-  color:#fff;
-}
-
-.login-box img{
-  width:150px;
-  margin-bottom:20px;
-}
-
-input{
-  width:100%;
-  padding:10px;
-  margin:10px 0;
-  border:none;
-  border-radius:6px;
-}
-
-button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:6px;
-  background:#00c3ff;
-  color:#fff;
-  cursor:pointer;
-  font-weight:bold;
-}
-
-button:hover{
-  background:#009ed1;
-}
-</style>
-</head>
-
-<body>
-
-<div class="login-box">
-
-  <img src="nextag_logo.png">
-
-  <h2>Login</h2>
-
-  <input id="usuario" placeholder="Usuário">
-  <input id="senha" type="password" placeholder="Senha">
-
-  <button onclick="login()">
-    <i class="fas fa-right-to-bracket"></i> Entrar
-  </button>
-
-</div>
-
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
 
-function chamarAPI(params, callback){
-  const cb = "cb_" + Date.now();
-  const script = document.createElement("script");
+/* 🔥 FUNÇÃO GLOBAL QUE O BACKEND CHAMA */
+function teste(res){
 
-  window[cb] = function(data){
-    callback(data);
-    delete window[cb];
-    script.remove();
-  };
+  console.log("🔎 RESPOSTA API:", res);
 
-  script.src = API_URL + "?" + new URLSearchParams(params) + "&callback=" + cb;
-  document.body.appendChild(script);
+  if(res && res.ok){
+
+    localStorage.setItem("userData", JSON.stringify(res));
+
+    console.log("✅ Login OK");
+    window.location.href = "painel.html";
+
+  }else{
+
+    console.warn("❌ Login falhou:", res);
+    alert(res?.erro || "Login inválido");
+
+  }
 }
 
-/* LOGIN REAL */
+/* LOGIN */
 function login(){
 
   const usuario = document.getElementById("usuario").value;
@@ -103,33 +32,15 @@ function login(){
     return;
   }
 
-  chamarAPI({
+  const script = document.createElement("script");
+
+  script.src = API_URL + "?" + new URLSearchParams({
     action:"login",
     usuario,
     senha,
     tipo:"painel"
-  }, res=>{
-
-    console.log("🔎 RESPOSTA API:", res); // 👈 IMPORTANTE
-
-    if(res && res.ok){
-
-      localStorage.setItem("userData", JSON.stringify(res));
-
-      console.log("✅ Login OK, redirecionando...");
-      window.location.href = "painel.html";
-
-    }else{
-
-      console.warn("❌ Login falhou:", res);
-
-      alert(res?.erro || "Login inválido ou API não respondeu corretamente");
-
-    }
-
   });
+
+  document.body.appendChild(script);
 }
 </script>
-
-</body>
-</html>
