@@ -1,16 +1,12 @@
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
 
-/* 🔥 ELEMENTOS */
-const loginDiv = document.getElementById("loginDiv");
-const painel = document.getElementById("painel");
-const projetoSelect = document.getElementById("projetoSelect");
-const listaArquivos = document.getElementById("listaArquivos");
-const logoProjeto = document.getElementById("logoProjeto");
-
 let projetosPermitidos = [];
 let projetoAtual = null;
 let iconeSelecionado = "fas fa-file";
+
+/* ELEMENTOS (GLOBAL 🔥) */
+let loginDiv, painel, projetoSelect, listaArquivos, logoProjeto;
 
 /* API */
 function chamarAPI(params, callback){
@@ -25,6 +21,32 @@ function chamarAPI(params, callback){
 
   script.src = API_URL + "?" + new URLSearchParams(params) + "&callback=" + cb;
   document.body.appendChild(script);
+}
+
+/* INIT CORRETO 🔥 */
+window.onload = function(){
+
+  loginDiv = document.getElementById("loginDiv");
+  painel = document.getElementById("painel");
+  projetoSelect = document.getElementById("projetoSelect");
+  listaArquivos = document.getElementById("listaArquivos");
+  logoProjeto = document.getElementById("logoProjeto");
+
+  const userData = localStorage.getItem("userData");
+
+  if(userData){
+    const data = JSON.parse(userData);
+
+    projetosPermitidos = data.projetos;
+
+    loginDiv.style.display="none";
+    painel.style.display="block";
+
+    carregarProjetos();
+  }else{
+    loginDiv.style.display="block";
+    painel.style.display="none";
+  }
 }
 
 /* LOGIN */
@@ -57,27 +79,6 @@ function login(){
   });
 }
 
-/* AUTO LOGIN */
-window.onload = function(){
-
-  const userData = localStorage.getItem("userData");
-
-  if(userData){
-    const data = JSON.parse(userData);
-
-    projetosPermitidos = data.projetos;
-
-    loginDiv.style.display="none";
-    painel.style.display="block";
-
-    carregarProjetos();
-
-  }else{
-    loginDiv.style.display="block";
-    painel.style.display="none";
-  }
-}
-
 /* LOGOUT */
 function logout(){
   localStorage.clear();
@@ -103,6 +104,11 @@ function carregarProjetos(){
         opt.value = p.id_projeto;
         opt.textContent = p.nome;
 
+        // 🔥 visual do projeto
+        opt.dataset.logo = p.logo || "";
+        opt.dataset.background = p.background || "";
+        opt.dataset.glass = p.glass_effect || "escuro";
+
         projetoSelect.appendChild(opt);
       }
     });
@@ -110,30 +116,9 @@ function carregarProjetos(){
   });
 }
 
-/* 🔥 BUSCA VISUAL REAL DO BACKEND */
-function carregarVisualProjeto(){
-
-  chamarAPI({
-    action:"getProjeto",
-    id_projeto: projetoAtual
-  }, res=>{
-
-    if(!res.projeto) return;
-
-    aplicarVisualProjeto({
-      logo: res.projeto.logo,
-      background: res.projeto.background,
-      glass_effect: res.projeto.glass_effect
-    });
-
-  });
-
-}
-
-/* 🔥 VISUAL */
+/* VISUAL DO PROJETO */
 function aplicarVisualProjeto(data){
 
-  // background
   if(data.background){
     document.body.style.background =
       `url('${data.background}') center/cover no-repeat`;
@@ -141,7 +126,6 @@ function aplicarVisualProjeto(data){
     document.body.style.background = "#111";
   }
 
-  // logo
   if(data.logo){
     logoProjeto.src = data.logo;
     logoProjeto.style.display = "block";
@@ -149,7 +133,6 @@ function aplicarVisualProjeto(data){
     logoProjeto.style.display = "none";
   }
 
-  // glass
   if(data.glass_effect === "claro"){
     aplicarTemaClaro();
   }else{
@@ -157,9 +140,8 @@ function aplicarVisualProjeto(data){
   }
 }
 
-/* 🎨 TEMAS */
+/* TEMAS */
 function aplicarTemaClaro(){
-
   document.body.style.color = "#111";
 
   document.querySelector(".container").style.background =
@@ -167,7 +149,6 @@ function aplicarTemaClaro(){
 }
 
 function aplicarTemaEscuro(){
-
   document.body.style.color = "#fff";
 
   document.querySelector(".container").style.background =
@@ -176,18 +157,23 @@ function aplicarTemaEscuro(){
 
 /* SELECIONAR PROJETO */
 function selecionarProjeto(){
-
   if(!projetoSelect.value) return;
 
   projetoAtual = projetoSelect.value;
 
-  carregarVisualProjeto(); // 🔥 CORREÇÃO AQUI
+  const opt = projetoSelect.selectedOptions[0];
+
+  aplicarVisualProjeto({
+    logo: opt.dataset.logo,
+    background: opt.dataset.background,
+    glass_effect: opt.dataset.glass
+  });
+
   carregarArquivos();
 }
 
 /* ARQUIVOS */
 function carregarArquivos(){
-
   chamarAPI({action:"getArquivos",projeto:projetoAtual}, res=>{
 
     listaArquivos.innerHTML="";
@@ -208,7 +194,6 @@ function carregarArquivos(){
     });
 
   });
-
 }
 
 /* MODAL */
