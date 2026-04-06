@@ -5,10 +5,10 @@ let projetosPermitidos = [];
 let projetoAtual = null;
 let iconeSelecionado = "fas fa-file";
 
-/* ELEMENTOS GLOBAIS 🔥 */
-let loginDiv, painel, projetoSelect, listaArquivos, logoProjeto;
-let modal, modalHistorico, modalInstrucoes, conteudoHistorico;
-let nomeArquivo, fileLink;
+/* 🔥 SEM VARIÁVEIS GLOBAIS FIXAS */
+function el(id){
+  return document.getElementById(id);
+}
 
 /* API */
 function chamarAPI(params, callback){
@@ -25,28 +25,14 @@ function chamarAPI(params, callback){
   document.body.appendChild(script);
 }
 
-/* INIT */
-window.onload = function(){
+/* INIT SEGURO 🔥 */
+window.addEventListener("DOMContentLoaded", () => {
 
-  // principais
-  loginDiv = document.getElementById("loginDiv");
-  painel = document.getElementById("painel");
-  projetoSelect = document.getElementById("projetoSelect");
-  listaArquivos = document.getElementById("listaArquivos");
-  logoProjeto = document.getElementById("logoProjeto");
-
-  // modais
-  modal = document.getElementById("modal");
-  modalHistorico = document.getElementById("modalHistorico");
-  modalInstrucoes = document.getElementById("modalInstrucoes");
-  conteudoHistorico = document.getElementById("conteudoHistorico");
-
-  // inputs
-  nomeArquivo = document.getElementById("nomeArquivo");
-  fileLink = document.getElementById("fileLink");
+  const loginDiv = el("loginDiv");
+  const painel = el("painel");
 
   if(!loginDiv || !painel){
-    console.error("Elementos principais não encontrados");
+    console.error("HTML não carregado corretamente");
     return;
   }
 
@@ -60,17 +46,16 @@ window.onload = function(){
     painel.style.display="block";
 
     carregarProjetos();
-
   }else{
     loginDiv.style.display="block";
     painel.style.display="none";
   }
-}
+});
 
 /* LOGIN */
 function login(){
-  const usuario = document.getElementById("usuario").value;
-  const senha = document.getElementById("senha").value;
+  const usuario = el("usuario").value;
+  const senha = el("senha").value;
 
   chamarAPI({
     action:"login",
@@ -84,8 +69,8 @@ function login(){
       projetosPermitidos = res.projetos;
       localStorage.setItem("userData", JSON.stringify(res));
 
-      loginDiv.style.display="none";
-      painel.style.display="block";
+      el("loginDiv").style.display="none";
+      el("painel").style.display="block";
 
       carregarProjetos();
 
@@ -104,17 +89,18 @@ function logout(){
 
 /* PROJETOS */
 function carregarProjetos(){
-  if(!projetoSelect) return;
+  const select = el("projetoSelect");
+  if(!select) return;
 
   chamarAPI({action:"getProjetos"}, res=>{
 
-    projetoSelect.innerHTML="";
+    select.innerHTML="";
 
     const placeholder = document.createElement("option");
     placeholder.text = "Selecione o projeto";
     placeholder.disabled = true;
     placeholder.selected = true;
-    projetoSelect.add(placeholder);
+    select.add(placeholder);
 
     res.projetos.forEach(p=>{
       if(projetosPermitidos.includes(String(p.id_projeto))){
@@ -127,7 +113,7 @@ function carregarProjetos(){
         opt.dataset.background = p.background || "";
         opt.dataset.glass = p.glass_effect || "escuro";
 
-        projetoSelect.appendChild(opt);
+        select.appendChild(opt);
       }
     });
 
@@ -141,12 +127,14 @@ function aplicarVisualProjeto(data){
     ? `url('${data.background}') center/cover no-repeat`
     : "#111";
 
-  if(logoProjeto){
+  const logo = el("logoProjeto");
+
+  if(logo){
     if(data.logo){
-      logoProjeto.src = data.logo;
-      logoProjeto.style.display = "block";
+      logo.src = data.logo;
+      logo.style.display = "block";
     }else{
-      logoProjeto.style.display = "none";
+      logo.style.display = "none";
     }
   }
 
@@ -170,10 +158,12 @@ function aplicarTemaEscuro(){
 
 /* SELEÇÃO */
 function selecionarProjeto(){
-  if(!projetoSelect.value) return;
+  const select = el("projetoSelect");
+  if(!select || !select.value) return;
 
-  projetoAtual = projetoSelect.value;
-  const opt = projetoSelect.selectedOptions[0];
+  projetoAtual = select.value;
+
+  const opt = select.selectedOptions[0];
 
   aplicarVisualProjeto({
     logo: opt.dataset.logo,
@@ -186,11 +176,12 @@ function selecionarProjeto(){
 
 /* ARQUIVOS */
 function carregarArquivos(){
-  if(!listaArquivos) return;
+  const lista = el("listaArquivos");
+  if(!lista) return;
 
   chamarAPI({action:"getArquivos",projeto:projetoAtual}, res=>{
 
-    listaArquivos.innerHTML="";
+    lista.innerHTML="";
 
     res.arquivos.forEach(a=>{
       const tr = document.createElement("tr");
@@ -204,43 +195,50 @@ function carregarArquivos(){
         "<button onclick='excluirArquivo("+JSON.stringify(a.nome)+")'>🗑️</button>" +
         "</td>";
 
-      listaArquivos.appendChild(tr);
+      lista.appendChild(tr);
     });
 
   });
 }
 
 /* MODAIS */
-function abrirModal(){ if(modal) modal.style.display="flex"; }
-function fecharModal(){ if(modal) modal.style.display="none"; }
+function abrirModal(){ const m = el("modal"); if(m) m.style.display="flex"; }
+function fecharModal(){ const m = el("modal"); if(m) m.style.display="none"; }
 
 function abrirHistorico(){
-  if(modalHistorico) modalHistorico.style.display="flex";
+  const modal = el("modalHistorico");
+  const conteudo = el("conteudoHistorico");
+
+  if(modal) modal.style.display="flex";
 
   chamarAPI({action:"getHistorico", projeto:projetoAtual}, res=>{
-    if(!conteudoHistorico) return;
+    if(!conteudo) return;
 
-    conteudoHistorico.innerHTML = "";
+    conteudo.innerHTML = "";
 
     (res.historico || []).forEach(h=>{
-      conteudoHistorico.innerHTML += `<div>${h.nome} - ${h.acao}</div>`;
+      conteudo.innerHTML += `<div>${h.nome} - ${h.acao}</div>`;
     });
   });
 }
-function fecharHistorico(){ if(modalHistorico) modalHistorico.style.display="none"; }
 
-function abrirInstrucoes(){ if(modalInstrucoes) modalInstrucoes.style.display="flex"; }
-function fecharInstrucoes(){ if(modalInstrucoes) modalInstrucoes.style.display="none"; }
+function fecharHistorico(){ const m = el("modalHistorico"); if(m) m.style.display="none"; }
+
+function abrirInstrucoes(){ const m = el("modalInstrucoes"); if(m) m.style.display="flex"; }
+function fecharInstrucoes(){ const m = el("modalInstrucoes"); if(m) m.style.display="none"; }
 
 /* AÇÕES */
 function salvar(){
-  if(!nomeArquivo || !fileLink) return;
+  const nome = el("nomeArquivo");
+  const link = el("fileLink");
+
+  if(!nome || !link) return;
 
   chamarAPI({
     action:"addArquivo",
     projeto:projetoAtual,
-    nome:nomeArquivo.value,
-    link:fileLink.value,
+    nome:nome.value,
+    link:link.value,
     icone:iconeSelecionado
   }, ()=>{
     fecharModal();
