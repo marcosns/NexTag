@@ -5,8 +5,10 @@ let projetosPermitidos = [];
 let projetoAtual = null;
 let iconeSelecionado = "fas fa-file";
 
-/* ELEMENTOS (GLOBAL 🔥) */
+/* ELEMENTOS GLOBAIS 🔥 */
 let loginDiv, painel, projetoSelect, listaArquivos, logoProjeto;
+let modal, modalHistorico, modalInstrucoes, conteudoHistorico;
+let nomeArquivo, fileLink;
 
 /* API */
 function chamarAPI(params, callback){
@@ -23,16 +25,26 @@ function chamarAPI(params, callback){
   document.body.appendChild(script);
 }
 
-/* INIT CORRETO 🔥 */
+/* INIT */
 window.onload = function(){
 
+  // principais
   loginDiv = document.getElementById("loginDiv");
   painel = document.getElementById("painel");
   projetoSelect = document.getElementById("projetoSelect");
   listaArquivos = document.getElementById("listaArquivos");
   logoProjeto = document.getElementById("logoProjeto");
 
-  // 🔥 proteção contra null
+  // modais
+  modal = document.getElementById("modal");
+  modalHistorico = document.getElementById("modalHistorico");
+  modalInstrucoes = document.getElementById("modalInstrucoes");
+  conteudoHistorico = document.getElementById("conteudoHistorico");
+
+  // inputs
+  nomeArquivo = document.getElementById("nomeArquivo");
+  fileLink = document.getElementById("fileLink");
+
   if(!loginDiv || !painel){
     console.error("Elementos principais não encontrados");
     return;
@@ -42,15 +54,12 @@ window.onload = function(){
 
   if(userData){
     const data = JSON.parse(userData);
-
     projetosPermitidos = data.projetos;
 
     loginDiv.style.display="none";
     painel.style.display="block";
 
-    if(projetoSelect){
-      carregarProjetos();
-    }
+    carregarProjetos();
 
   }else{
     loginDiv.style.display="block";
@@ -73,7 +82,6 @@ function login(){
     if(res.ok){
 
       projetosPermitidos = res.projetos;
-
       localStorage.setItem("userData", JSON.stringify(res));
 
       loginDiv.style.display="none";
@@ -96,6 +104,8 @@ function logout(){
 
 /* PROJETOS */
 function carregarProjetos(){
+  if(!projetoSelect) return;
+
   chamarAPI({action:"getProjetos"}, res=>{
 
     projetoSelect.innerHTML="";
@@ -113,7 +123,6 @@ function carregarProjetos(){
         opt.value = p.id_projeto;
         opt.textContent = p.nome;
 
-        // 🔥 visual do projeto
         opt.dataset.logo = p.logo || "";
         opt.dataset.background = p.background || "";
         opt.dataset.glass = p.glass_effect || "escuro";
@@ -125,51 +134,45 @@ function carregarProjetos(){
   });
 }
 
-/* VISUAL DO PROJETO */
+/* VISUAL */
 function aplicarVisualProjeto(data){
 
-  if(data.background){
-    document.body.style.background =
-      `url('${data.background}') center/cover no-repeat`;
-  }else{
-    document.body.style.background = "#111";
+  document.body.style.background = data.background
+    ? `url('${data.background}') center/cover no-repeat`
+    : "#111";
+
+  if(logoProjeto){
+    if(data.logo){
+      logoProjeto.src = data.logo;
+      logoProjeto.style.display = "block";
+    }else{
+      logoProjeto.style.display = "none";
+    }
   }
 
-  if(data.logo){
-    logoProjeto.src = data.logo;
-    logoProjeto.style.display = "block";
-  }else{
-    logoProjeto.style.display = "none";
-  }
-
-  if(data.glass_effect === "claro"){
-    aplicarTemaClaro();
-  }else{
-    aplicarTemaEscuro();
-  }
+  data.glass_effect === "claro"
+    ? aplicarTemaClaro()
+    : aplicarTemaEscuro();
 }
 
 /* TEMAS */
 function aplicarTemaClaro(){
   document.body.style.color = "#111";
-
-  document.querySelector(".container").style.background =
-    "rgba(255,255,255,0.65)";
+  const c = document.querySelector(".container");
+  if(c) c.style.background = "rgba(255,255,255,0.65)";
 }
 
 function aplicarTemaEscuro(){
   document.body.style.color = "#fff";
-
-  document.querySelector(".container").style.background =
-    "rgba(0,0,0,0.4)";
+  const c = document.querySelector(".container");
+  if(c) c.style.background = "rgba(0,0,0,0.4)";
 }
 
-/* SELECIONAR PROJETO */
+/* SELEÇÃO */
 function selecionarProjeto(){
   if(!projetoSelect.value) return;
 
   projetoAtual = projetoSelect.value;
-
   const opt = projetoSelect.selectedOptions[0];
 
   aplicarVisualProjeto({
@@ -183,6 +186,8 @@ function selecionarProjeto(){
 
 /* ARQUIVOS */
 function carregarArquivos(){
+  if(!listaArquivos) return;
+
   chamarAPI({action:"getArquivos",projeto:projetoAtual}, res=>{
 
     listaArquivos.innerHTML="";
@@ -205,19 +210,32 @@ function carregarArquivos(){
   });
 }
 
-/* MODAL */
-function abrirModal(){ modal.style.display="flex"; }
-function fecharModal(){ modal.style.display="none"; }
+/* MODAIS */
+function abrirModal(){ if(modal) modal.style.display="flex"; }
+function fecharModal(){ if(modal) modal.style.display="none"; }
 
-/* ICONE */
-function selecionarIcone(el){
-  document.querySelectorAll(".icon-picker i").forEach(i=>i.classList.remove("selected"));
-  el.classList.add("selected");
-  iconeSelecionado = el.className;
+function abrirHistorico(){
+  if(modalHistorico) modalHistorico.style.display="flex";
+
+  chamarAPI({action:"getHistorico", projeto:projetoAtual}, res=>{
+    if(!conteudoHistorico) return;
+
+    conteudoHistorico.innerHTML = "";
+
+    (res.historico || []).forEach(h=>{
+      conteudoHistorico.innerHTML += `<div>${h.nome} - ${h.acao}</div>`;
+    });
+  });
 }
+function fecharHistorico(){ if(modalHistorico) modalHistorico.style.display="none"; }
 
-/* SALVAR */
+function abrirInstrucoes(){ if(modalInstrucoes) modalInstrucoes.style.display="flex"; }
+function fecharInstrucoes(){ if(modalInstrucoes) modalInstrucoes.style.display="none"; }
+
+/* AÇÕES */
 function salvar(){
+  if(!nomeArquivo || !fileLink) return;
+
   chamarAPI({
     action:"addArquivo",
     projeto:projetoAtual,
@@ -230,7 +248,6 @@ function salvar(){
   });
 }
 
-/* EDITAR */
 function editarArquivo(nome){
   const novo = prompt("Novo link:");
   if(!novo) return;
@@ -243,7 +260,6 @@ function editarArquivo(nome){
   }, carregarArquivos);
 }
 
-/* EXCLUIR */
 function excluirArquivo(nome){
   if(confirm("Excluir?")){
     chamarAPI({
@@ -253,23 +269,4 @@ function excluirArquivo(nome){
     }, carregarArquivos);
   }
 }
-
-/* HISTORICO */
-function abrirHistorico(){
-  modalHistorico.style.display="flex";
-
-  chamarAPI({action:"getHistorico", projeto:projetoAtual}, res=>{
-    conteudoHistorico.innerHTML = "";
-
-    (res.historico || []).forEach(h=>{
-      conteudoHistorico.innerHTML += `<div>${h.nome} - ${h.acao}</div>`;
-    });
-  });
-}
-function fecharHistorico(){ modalHistorico.style.display="none"; }
-
-/* INSTRUCOES */
-function abrirInstrucoes(){ modalInstrucoes.style.display="flex"; }
-function fecharInstrucoes(){ modalInstrucoes.style.display="none"; }
-
 </script>
