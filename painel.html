@@ -9,15 +9,11 @@ let editandoNome = null;
 /* INIT SEGURO */
 document.addEventListener("DOMContentLoaded", () => {
 
-  console.log("🚀 DOM carregado");
-
   const userData = JSON.parse(localStorage.getItem("userData") || "{}");
 
   const elUser = document.getElementById("userNome");
   if(elUser){
     elUser.innerText = userData.usuario || "Usuário";
-  } else {
-    console.warn("⚠️ userNome não encontrado");
   }
 
   carregarProjetos();
@@ -42,10 +38,7 @@ function chamarAPI(params, callback){
 function carregarProjetos(){
 
   const select = document.getElementById("projetoSelect");
-  if(!select){
-    console.warn("⚠️ projetoSelect não existe");
-    return;
-  }
+  if(!select) return;
 
   chamarAPI({action:"getProjetos"}, res=>{
 
@@ -61,8 +54,9 @@ function carregarProjetos(){
   });
 }
 
-/* SELECIONAR */
+/* SELECIONAR PROJETO */
 function selecionarProjeto(){
+
   const select = document.getElementById("projetoSelect");
   if(!select) return;
 
@@ -72,28 +66,30 @@ function selecionarProjeto(){
   carregarArquivos();
 }
 
-/* ARQUIVOS */
+/* CARREGAR ARQUIVOS */
 function carregarArquivos(){
+
   chamarAPI({action:"getArquivos", projeto:projetoAtual}, res=>{
     arquivos = res.arquivos || [];
-    ordenar();
+    ordenar(); // 🔥 já ordena automaticamente
   });
 }
 
 /* RENDER */
 function render(){
+
   const lista = document.getElementById("listaArquivos");
-  if(!lista){
-    console.warn("⚠️ listaArquivos não existe");
-    return;
-  }
+  if(!lista) return;
 
   lista.innerHTML="";
 
   arquivos.forEach(a=>{
     lista.innerHTML += `
       <div class="file">
-        <div><i class="${a.icone}"></i> ${a.nome}</div>
+        <div>
+          <i class="${a.icone}"></i> ${a.nome}
+        </div>
+
         <div class="actions">
           <button onclick="window.open('${a.link}')">👁️</button>
           <button onclick="editar('${a.nome}','${a.link}','${a.icone}')">✏️</button>
@@ -106,6 +102,7 @@ function render(){
 
 /* ORDENAÇÃO */
 function ordenar(){
+
   const el = document.getElementById("ordem");
 
   if(el){
@@ -121,15 +118,20 @@ function ordenar(){
   render();
 }
 
-/* MODAL */
+/* ABRIR MODAL (NOVO) */
 function abrirModal(){
+
   const modal = document.getElementById("modal");
   if(!modal) return;
 
   modal.style.display="flex";
 
-  nomeArquivo.value = "";
-  fileLink.value = "";
+  const nomeInput = document.getElementById("nomeArquivo");
+  const linkInput = document.getElementById("fileLink");
+
+  if(nomeInput) nomeInput.value = "";
+  if(linkInput) linkInput.value = "";
+
   iconeSelecionado = "fas fa-file";
   editandoNome = null;
 
@@ -146,8 +148,11 @@ function editar(nome,link,icone){
 
   modal.style.display="flex";
 
-  nomeArquivo.value = nome;
-  fileLink.value = link;
+  const nomeInput = document.getElementById("nomeArquivo");
+  const linkInput = document.getElementById("fileLink");
+
+  if(nomeInput) nomeInput.value = nome;
+  if(linkInput) linkInput.value = link;
 
   iconeSelecionado = icone;
   editandoNome = nome;
@@ -160,14 +165,20 @@ function editar(nome,link,icone){
 
 /* SALVAR */
 function salvar(){
+
   if(!projetoAtual) return;
+
+  const nomeInput = document.getElementById("nomeArquivo");
+  const linkInput = document.getElementById("fileLink");
+
+  if(!nomeInput || !linkInput) return;
 
   chamarAPI({
     action:"addArquivo",
     projeto:projetoAtual,
-    nome:nomeArquivo.value,
-    link:fileLink.value,
-    icone:iconeSelecionado,
+    nome: nomeInput.value,
+    link: linkInput.value,
+    icone: iconeSelecionado,
     antigo: editandoNome
   }, ()=>{
     fecharModal();
@@ -201,12 +212,14 @@ function fecharModal(){
 
 /* HISTÓRICO */
 function abrirHistorico(){
+
   if(!projetoAtual){
     alert("Selecione um projeto primeiro");
     return;
   }
 
   chamarAPI({action:"getHistorico", projeto:projetoAtual}, res=>{
+
     let texto = "Histórico:\n\n";
 
     (res.historico || []).forEach(h=>{
