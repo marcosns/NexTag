@@ -6,6 +6,23 @@ let projetoAtual = null;
 let iconeSelecionado = "fas fa-file";
 let editandoNome = null;
 
+/* INIT SEGURO */
+document.addEventListener("DOMContentLoaded", () => {
+
+  console.log("🚀 DOM carregado");
+
+  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+
+  const elUser = document.getElementById("userNome");
+  if(elUser){
+    elUser.innerText = userData.usuario || "Usuário";
+  } else {
+    console.warn("⚠️ userNome não encontrado");
+  }
+
+  carregarProjetos();
+});
+
 /* API */
 function chamarAPI(params, callback){
   const cb = "cb_" + Date.now();
@@ -21,24 +38,16 @@ function chamarAPI(params, callback){
   document.body.appendChild(script);
 }
 
-/* INIT */
-window.onload = function(){
-  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-
-  const elUser = document.getElementById("userNome");
-  if(elUser){
-    elUser.innerText = userData.usuario || "Usuário";
-  }
-
-  carregarProjetos();
-}
-
 /* PROJETOS */
 function carregarProjetos(){
-  chamarAPI({action:"getProjetos"}, res=>{
 
-    const select = document.getElementById("projetoSelect");
-    if(!select) return;
+  const select = document.getElementById("projetoSelect");
+  if(!select){
+    console.warn("⚠️ projetoSelect não existe");
+    return;
+  }
+
+  chamarAPI({action:"getProjetos"}, res=>{
 
     select.innerHTML = "<option value=''>Selecione o projeto</option>";
 
@@ -52,7 +61,7 @@ function carregarProjetos(){
   });
 }
 
-/* SELECIONAR PROJETO */
+/* SELECIONAR */
 function selecionarProjeto(){
   const select = document.getElementById("projetoSelect");
   if(!select) return;
@@ -63,28 +72,28 @@ function selecionarProjeto(){
   carregarArquivos();
 }
 
-/* CARREGAR ARQUIVOS */
+/* ARQUIVOS */
 function carregarArquivos(){
   chamarAPI({action:"getArquivos", projeto:projetoAtual}, res=>{
     arquivos = res.arquivos || [];
-    ordenar(); // 🔥 já aplica ordenação automaticamente
+    ordenar();
   });
 }
 
 /* RENDER */
 function render(){
   const lista = document.getElementById("listaArquivos");
-  if(!lista) return;
+  if(!lista){
+    console.warn("⚠️ listaArquivos não existe");
+    return;
+  }
 
   lista.innerHTML="";
 
   arquivos.forEach(a=>{
     lista.innerHTML += `
       <div class="file">
-        <div>
-          <i class="${a.icone}"></i> ${a.nome}
-        </div>
-
+        <div><i class="${a.icone}"></i> ${a.nome}</div>
         <div class="actions">
           <button onclick="window.open('${a.link}')">👁️</button>
           <button onclick="editar('${a.nome}','${a.link}','${a.icone}')">✏️</button>
@@ -98,23 +107,21 @@ function render(){
 /* ORDENAÇÃO */
 function ordenar(){
   const el = document.getElementById("ordem");
-  if(!el){
-    render();
-    return;
+
+  if(el){
+    const tipo = el.value;
+
+    arquivos.sort((a,b)=>{
+      if(tipo==="az") return a.nome.localeCompare(b.nome);
+      if(tipo==="za") return b.nome.localeCompare(a.nome);
+      return 0;
+    });
   }
-
-  const tipo = el.value;
-
-  arquivos.sort((a,b)=>{
-    if(tipo==="az") return a.nome.localeCompare(b.nome);
-    if(tipo==="za") return b.nome.localeCompare(a.nome);
-    return 0;
-  });
 
   render();
 }
 
-/* ABRIR MODAL (NOVO ARQUIVO) */
+/* MODAL */
 function abrirModal(){
   const modal = document.getElementById("modal");
   if(!modal) return;
@@ -151,9 +158,8 @@ function editar(nome,link,icone){
   });
 }
 
-/* SALVAR (CRIA OU EDITA) */
+/* SALVAR */
 function salvar(){
-
   if(!projetoAtual) return;
 
   chamarAPI({
@@ -195,14 +201,12 @@ function fecharModal(){
 
 /* HISTÓRICO */
 function abrirHistorico(){
-
   if(!projetoAtual){
     alert("Selecione um projeto primeiro");
     return;
   }
 
   chamarAPI({action:"getHistorico", projeto:projetoAtual}, res=>{
-
     let texto = "Histórico:\n\n";
 
     (res.historico || []).forEach(h=>{
