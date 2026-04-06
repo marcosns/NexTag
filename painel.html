@@ -1,107 +1,166 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Painel NexTag</title>
+<meta charset="UTF-8">
+<title>Painel NexTag</title>
 
-  <!-- Ícones -->
-  <link rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- FAVICON -->
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/906/906334.png">
 
-  <style>
-    body{
-      margin:0;
-      font-family: Arial;
-      background:#111;
-      color:#fff;
-    }
+<!-- FONT AWESOME -->
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    .container{
-      max-width:900px;
-      margin:40px auto;
-      padding:20px;
-      border-radius:12px;
-      background:rgba(0,0,0,0.4);
-    }
+<style>
+body{
+  margin:0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  color:#fff;
+}
 
-    input, select, button{
-      padding:10px;
-      margin:5px;
-      border-radius:6px;
-      border:none;
-    }
+/* HEADER */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 30px;
+  background:rgba(0,0,0,0.5);
+  backdrop-filter: blur(10px);
+}
 
-    button{
-      cursor:pointer;
-      background:#333;
-      color:#fff;
-    }
+.logo{
+  font-size:22px;
+  font-weight:bold;
+}
 
-    table{
-      width:100%;
-      margin-top:20px;
-      border-collapse: collapse;
-    }
+.user{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
 
-    td{
-      padding:10px;
-      border-bottom:1px solid #555;
-    }
+.logout{
+  cursor:pointer;
+  color:#ff5c5c;
+}
 
-    .actions button{
-      margin-right:5px;
-    }
+/* CONTAINER */
+.container{
+  max-width:1000px;
+  margin:30px auto;
+  padding:20px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter: blur(15px);
+}
 
-    #logoProjeto{
-      max-height:80px;
-      margin-bottom:15px;
-      display:none;
-    }
+/* TITULO */
+.title{
+  margin-bottom:20px;
+}
 
-    /* modal */
-    .modal{
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      background:rgba(0,0,0,0.7);
-      display:none;
-      align-items:center;
-      justify-content:center;
-    }
+/* CONTROLES */
+.controls{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:15px;
+}
 
-    .modal-content{
-      background:#222;
-      padding:20px;
-      border-radius:10px;
-      width:300px;
-    }
-  </style>
+/* BOTÕES */
+button{
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  background:#333;
+  color:#fff;
+}
+
+/* TABELA */
+table{
+  width:100%;
+  border-collapse: collapse;
+}
+
+td{
+  padding:10px;
+  border-bottom:1px solid #444;
+}
+
+.actions button{
+  margin-right:5px;
+}
+
+/* LOGO CLIENTE */
+#logoProjeto{
+  max-height:70px;
+  margin-bottom:10px;
+}
+
+/* MODAL */
+.modal{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+
+.modal-content{
+  background:#222;
+  padding:20px;
+  border-radius:10px;
+}
+
+/* FOOTER */
+.footer{
+  text-align:center;
+  padding:15px;
+  font-size:12px;
+  opacity:0.7;
+}
+</style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="loginDiv" class="container">
-  <h2>Login</h2>
-  <input id="usuario" placeholder="Usuário"><br>
-  <input id="senha" type="password" placeholder="Senha"><br>
-  <button onclick="login()">Entrar</button>
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">🚀 NexTag Admin</div>
+
+  <div class="user">
+    <span id="nomeUsuario"></span>
+    <i class="fas fa-times logout" onclick="logout()"></i>
+  </div>
 </div>
 
-<!-- PAINEL -->
-<div id="painel" class="container" style="display:none">
+<div class="container">
+
+  <div class="controls">
+    <button onclick="abrirHistorico()">📜 Histórico</button>
+
+    <div>
+      <select id="ordenar" onchange="ordenarArquivos()">
+        <option value="nome">A-Z</option>
+        <option value="data">Data</option>
+      </select>
+
+      <button onclick="abrirModal()">+ Arquivo</button>
+    </div>
+  </div>
 
   <img id="logoProjeto">
 
-  <h2>Painel</h2>
+  <h3 class="title">
+    Bem vindo ao portal de Administração do NexTag
+  </h3>
 
   <select id="projetoSelect" onchange="selecionarProjeto()"></select>
-
-  <button onclick="abrirModal()">+ Arquivo</button>
-  <button onclick="abrirHistorico()">Histórico</button>
-  <button onclick="logout()">Sair</button>
 
   <table>
     <tbody id="listaArquivos"></tbody>
@@ -109,111 +168,57 @@
 
 </div>
 
+<div class="footer">
+  Suporte: contato@nextag.com | © NexTag
+</div>
+
 <!-- MODAL -->
 <div id="modal" class="modal">
   <div class="modal-content">
-    <h3>Novo Arquivo</h3>
-    <input id="nomeArquivo" placeholder="Nome"><br>
-    <input id="fileLink" placeholder="Link"><br>
+    <input id="nomeArquivo" placeholder="Nome"><br><br>
+    <input id="fileLink" placeholder="Link"><br><br>
+
+    <select id="icone">
+      <option value="fas fa-file">Arquivo</option>
+      <option value="fas fa-image">Imagem</option>
+      <option value="fas fa-file-pdf">PDF</option>
+    </select><br><br>
+
     <button onclick="salvar()">Salvar</button>
     <button onclick="fecharModal()">Fechar</button>
   </div>
 </div>
 
-<!-- HISTÓRICO -->
-<div id="modalHistorico" class="modal">
-  <div class="modal-content">
-    <h3>Histórico</h3>
-    <div id="conteudoHistorico"></div>
-    <button onclick="fecharHistorico()">Fechar</button>
-  </div>
-</div>
-
 <!-- SCRIPT -->
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
+const API_URL = "SUA_API_AQUI";
 
-let projetosPermitidos = [];
-let projetoAtual = null;
-let iconeSelecionado = "fas fa-file";
-
-let loginDiv, painel, projetoSelect, listaArquivos, logoProjeto;
-let modal, modalHistorico, conteudoHistorico;
-let nomeArquivo, fileLink;
+let projetoAtual=null;
+let arquivos=[];
 
 /* API */
-function chamarAPI(params, callback){
-  const cb = "cb_" + Date.now();
-  const script = document.createElement("script");
+function chamarAPI(params,callback){
+  const cb="cb_"+Date.now();
+  const script=document.createElement("script");
 
-  window[cb] = function(data){
+  window[cb]=function(data){
     callback(data);
     delete window[cb];
     script.remove();
-  };
+  }
 
-  script.src = API_URL + "?" + new URLSearchParams(params) + "&callback=" + cb;
+  script.src=API_URL+"?"+new URLSearchParams(params)+"&callback="+cb;
   document.body.appendChild(script);
 }
 
-/* INIT */
-window.onload = function(){
+/* LOGIN SIMPLES */
+window.onload=()=>{
+  const user=JSON.parse(localStorage.getItem("userData")||"{}");
 
-  loginDiv = document.getElementById("loginDiv");
-  painel = document.getElementById("painel");
-  projetoSelect = document.getElementById("projetoSelect");
-  listaArquivos = document.getElementById("listaArquivos");
-  logoProjeto = document.getElementById("logoProjeto");
+  document.getElementById("nomeUsuario").innerText =
+    user.usuario || "Admin";
 
-  modal = document.getElementById("modal");
-  modalHistorico = document.getElementById("modalHistorico");
-  conteudoHistorico = document.getElementById("conteudoHistorico");
-
-  nomeArquivo = document.getElementById("nomeArquivo");
-  fileLink = document.getElementById("fileLink");
-
-  const userData = localStorage.getItem("userData");
-
-  if(userData){
-    const data = JSON.parse(userData);
-
-    projetosPermitidos = data.projetos;
-
-    loginDiv.style.display="none";
-    painel.style.display="block";
-
-    carregarProjetos();
-
-  }else{
-    loginDiv.style.display="block";
-    painel.style.display="none";
-  }
-}
-
-/* LOGIN */
-function login(){
-  const usuario = document.getElementById("usuario").value;
-  const senha = document.getElementById("senha").value;
-
-  chamarAPI({
-    action:"login",
-    usuario,
-    senha,
-    tipo:"painel"
-  }, res=>{
-
-    if(res.ok){
-      projetosPermitidos = res.projetos;
-      localStorage.setItem("userData", JSON.stringify(res));
-
-      loginDiv.style.display="none";
-      painel.style.display="block";
-
-      carregarProjetos();
-    }else{
-      alert("Login inválido");
-    }
-  });
+  carregarProjetos();
 }
 
 /* LOGOUT */
@@ -224,86 +229,118 @@ function logout(){
 
 /* PROJETOS */
 function carregarProjetos(){
-  chamarAPI({action:"getProjetos"}, res=>{
-
-    projetoSelect.innerHTML="";
+  chamarAPI({action:"getProjetos"},res=>{
+    const sel=document.getElementById("projetoSelect");
 
     res.projetos.forEach(p=>{
-      if(projetosPermitidos.includes(String(p.id_projeto))){
-        const opt = document.createElement("option");
-        opt.value = p.id_projeto;
-        opt.textContent = p.nome;
-        projetoSelect.appendChild(opt);
-      }
+      const o=document.createElement("option");
+      o.value=p.id_projeto;
+      o.textContent=p.nome;
+      o.dataset.logo=p.logo;
+      sel.appendChild(o);
     });
   });
 }
 
-/* SELECIONAR */
+/* SELEÇÃO */
 function selecionarProjeto(){
-  projetoAtual = projetoSelect.value;
+  const sel=document.getElementById("projetoSelect");
+  const opt=sel.selectedOptions[0];
+
+  projetoAtual=sel.value;
+
+  document.getElementById("logoProjeto").src=opt.dataset.logo;
+
   carregarArquivos();
 }
 
 /* ARQUIVOS */
 function carregarArquivos(){
-  chamarAPI({action:"getArquivos",projeto:projetoAtual}, res=>{
-
-    listaArquivos.innerHTML="";
-
-    res.arquivos.forEach(a=>{
-      const tr = document.createElement("tr");
-
-      tr.innerHTML =
-        "<td>"+a.nome+"</td>" +
-        "<td class='actions'>" +
-        "<button onclick='window.open("+JSON.stringify(a.link)+")'>👁️</button>" +
-        "<button onclick='excluirArquivo("+JSON.stringify(a.nome)+")'>🗑️</button>" +
-        "</td>";
-
-      listaArquivos.appendChild(tr);
-    });
+  chamarAPI({action:"getArquivos",projeto:projetoAtual},res=>{
+    arquivos=res.arquivos;
+    renderArquivos();
   });
 }
 
-/* MODAIS */
-function abrirModal(){ modal.style.display="flex"; }
-function fecharModal(){ modal.style.display="none"; }
+function renderArquivos(){
+  const lista=document.getElementById("listaArquivos");
+  lista.innerHTML="";
 
-function abrirHistorico(){
-  modalHistorico.style.display="flex";
+  arquivos.forEach(a=>{
+    const tr=document.createElement("tr");
 
-  chamarAPI({action:"getHistorico", projeto:projetoAtual}, res=>{
-    conteudoHistorico.innerHTML = "";
+    tr.innerHTML=`
+      <td><i class="${a.icone}"></i> ${a.nome}</td>
+      <td class="actions">
+        <button onclick="window.open('${a.link}')">👁️</button>
+        <button onclick="editar('${a.nome}')">✏️</button>
+        <button onclick="window.open('${a.link}')">⬇️</button>
+        <button onclick="excluir('${a.nome}')">🗑️</button>
+      </td>
+    `;
 
-    (res.historico || []).forEach(h=>{
-      conteudoHistorico.innerHTML += `<div>${h.nome} - ${h.acao}</div>`;
-    });
+    lista.appendChild(tr);
   });
 }
-function fecharHistorico(){ modalHistorico.style.display="none"; }
 
-/* AÇÕES */
+/* ORDENAR */
+function ordenarArquivos(){
+  const tipo=document.getElementById("ordenar").value;
+
+  if(tipo==="nome"){
+    arquivos.sort((a,b)=>a.nome.localeCompare(b.nome));
+  }else{
+    arquivos.sort((a,b)=>new Date(b.data)-new Date(a.data));
+  }
+
+  renderArquivos();
+}
+
+/* MODAL */
+function abrirModal(){modal.style.display="flex";}
+function fecharModal(){modal.style.display="none";}
+
+/* SALVAR */
 function salvar(){
   chamarAPI({
     action:"addArquivo",
     projeto:projetoAtual,
     nome:nomeArquivo.value,
-    link:fileLink.value
-  }, ()=>{
+    link:fileLink.value,
+    icone:icone.value
+  },()=>{
     fecharModal();
     carregarArquivos();
   });
 }
 
-function excluirArquivo(nome){
+/* EDITAR */
+function editar(nome){
+  const novoNome=prompt("Novo nome:");
+  const novoLink=prompt("Novo link:");
+
+  chamarAPI({
+    action:"addArquivo",
+    projeto:projetoAtual,
+    nome:novoNome,
+    link:novoLink
+  },carregarArquivos);
+}
+
+/* EXCLUIR */
+function excluir(nome){
   if(confirm("Excluir?")){
     chamarAPI({
       action:"deleteArquivo",
       projeto:projetoAtual,
       nome
-    }, carregarArquivos);
+    },carregarArquivos);
   }
+}
+
+/* HISTORICO */
+function abrirHistorico(){
+  alert("Histórico aqui (pode evoluir depois)");
 }
 </script>
 
