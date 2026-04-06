@@ -2,26 +2,16 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Painel NexTag</title>
+<title>NexTag Admin</title>
 
-<!-- SEUS ARQUIVOS -->
 <link rel="icon" href="favicon.ico">
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-:root{
-  --glass: rgba(255,255,255,0.08);
-  --border: rgba(255,255,255,0.15);
-  --primary: #4da3ff;
-}
-
-/* BODY */
 body{
   margin:0;
   font-family: 'Segoe UI', sans-serif;
-  background: url('fundo6.jpg') center/cover no-repeat fixed;
+  background:url("fundo6.jpg") center/cover no-repeat fixed;
   color:#fff;
 }
 
@@ -31,123 +21,108 @@ body{
   justify-content:space-between;
   align-items:center;
   padding:15px 30px;
+  background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(10px);
+}
+
+.logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.logo img{ height:40px; }
+
+.top-actions{
+  display:flex;
+  gap:15px;
+  align-items:center;
+}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;
+  left:0;
+  top:70px;
+  width:220px;
+  bottom:0;
   background:rgba(0,0,0,0.6);
-  backdrop-filter: blur(12px);
-  border-bottom:1px solid var(--border);
+  padding:20px;
 }
 
-.logo img{
-  height:40px;
+/* MAIN */
+.main{
+  margin-left:240px;
+  padding:20px;
 }
 
-.user{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  font-size:14px;
-}
-
-.logout{
-  cursor:pointer;
-  color:#ff5c5c;
-  font-size:18px;
-}
-
-/* CONTAINER */
-.container{
-  max-width:1100px;
-  margin:30px auto;
-  padding:25px;
-  border-radius:14px;
-  background:var(--glass);
-  backdrop-filter: blur(18px);
-  border:1px solid var(--border);
-}
-
-/* TITULO */
-.title{
-  margin:10px 0 20px;
-  font-size:20px;
-  opacity:0.9;
-}
-
-/* CONTROLES */
-.controls{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+/* CARDS */
+.card{
+  background:rgba(0,0,0,0.5);
+  padding:20px;
+  border-radius:12px;
   margin-bottom:20px;
 }
 
-/* BOTÕES */
-button{
-  padding:8px 14px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  background:rgba(255,255,255,0.1);
-  color:#fff;
-  transition:0.2s;
-}
-
-button:hover{
-  background:var(--primary);
-}
-
-/* SELECT */
-select, input{
-  padding:8px;
-  border-radius:6px;
-  border:none;
-}
-
-/* TABELA */
-table{
-  width:100%;
-  border-collapse: collapse;
-}
-
-td{
-  padding:12px;
+/* LISTA */
+.file{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px;
   border-bottom:1px solid rgba(255,255,255,0.1);
 }
 
+.file i{ margin-right:10px; }
+
 .actions button{
-  margin-right:5px;
+  margin-left:5px;
+  background:#222;
+  border:none;
+  color:#fff;
+  padding:6px 10px;
+  border-radius:6px;
+  cursor:pointer;
 }
 
-/* LOGO CLIENTE */
-#logoProjeto{
-  max-height:60px;
-  margin-bottom:10px;
+.actions button:hover{ background:#555; }
+
+/* ICON PICKER */
+.icon-picker i{
+  font-size:22px;
+  margin:8px;
+  cursor:pointer;
+}
+
+.icon-picker i.selected{
+  color:#00d4ff;
 }
 
 /* MODAL */
 .modal{
   position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.7);
+  inset:0;
+  background:rgba(0,0,0,0.8);
   display:none;
-  justify-content:center;
   align-items:center;
+  justify-content:center;
 }
 
-.modal-content{
-  background:#1e1e1e;
-  padding:25px;
-  border-radius:10px;
-  width:320px;
+.modal-box{
+  background:#111;
+  padding:20px;
+  border-radius:12px;
+  width:350px;
 }
 
 /* FOOTER */
 .footer{
   text-align:center;
-  padding:20px;
-  font-size:12px;
-  opacity:0.7;
+  padding:15px;
+  background:rgba(0,0,0,0.7);
+  position:fixed;
+  bottom:0;
+  width:100%;
 }
 </style>
 </head>
@@ -158,207 +133,136 @@ td{
 <div class="header">
   <div class="logo">
     <img src="nextag_logo.png">
+    <div>Admin NexTag</div>
   </div>
 
-  <div class="user">
-    <span id="nomeUsuario"></span>
-    <i class="fas fa-times logout" onclick="logout()"></i>
+  <div class="top-actions">
+    <span id="userNome"></span>
+    <button onclick="toggleTema()">🌙</button>
+    <button onclick="logout()">✖</button>
   </div>
 </div>
 
-<!-- CONTEUDO -->
-<div class="container">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <button onclick="abrirHistorico()">📜 Histórico</button>
+  <hr>
+  <select id="ordem" onchange="ordenar()">
+    <option value="az">A-Z</option>
+    <option value="za">Z-A</option>
+  </select>
+</div>
 
-  <div class="controls">
-    <button onclick="abrirHistorico()">📜 Histórico</button>
+<!-- MAIN -->
+<div class="main">
 
-    <div>
-      <select id="ordenar" onchange="ordenarArquivos()">
-        <option value="nome">A-Z</option>
-        <option value="data">Data</option>
-      </select>
+<div class="card">
+<h2>Bem vindo ao portal NexTag</h2>
+<p>Gerencie arquivos e projetos com facilidade.</p>
 
-      <button onclick="abrirModal()">+ Arquivo</button>
-    </div>
-  </div>
+<select id="projetoSelect" onchange="selecionarProjeto()"></select>
+</div>
 
-  <img id="logoProjeto">
-
-  <h3 class="title">
-    Bem-vindo ao portal de Administração do NexTag
-  </h3>
-
-  <select id="projetoSelect" onchange="selecionarProjeto()"></select>
-
-  <table>
-    <tbody id="listaArquivos"></tbody>
-  </table>
+<div class="card" id="listaArquivos"></div>
 
 </div>
 
-<!-- FOOTER -->
-<div class="footer">
-  Suporte: contato@nextag.com.br | © NexTag
-</div>
-
-<!-- MODAL -->
-<div id="modal" class="modal">
-  <div class="modal-content">
-    <h3>Novo Arquivo</h3><br>
+<!-- MODAL EDIT -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3>Editar Arquivo</h3>
 
     <input id="nomeArquivo" placeholder="Nome"><br><br>
     <input id="fileLink" placeholder="Link"><br><br>
 
-    <select id="icone">
-      <option value="fas fa-file">Arquivo</option>
-      <option value="fas fa-image">Imagem</option>
-      <option value="fas fa-file-pdf">PDF</option>
-    </select><br><br>
+    <p>Selecione o ícone:</p>
+    <div class="icon-picker">
+      <i class="fas fa-file" onclick="selecionarIcone(this)"></i>
+      <i class="fas fa-file-pdf" onclick="selecionarIcone(this)"></i>
+      <i class="fas fa-image" onclick="selecionarIcone(this)"></i>
+      <i class="fas fa-folder" onclick="selecionarIcone(this)"></i>
+      <i class="fas fa-shield-halved" onclick="selecionarIcone(this)"></i>
+      <i class="fas fa-address-book" onclick="selecionarIcone(this)"></i>
+      <i class="fas fa-book" onclick="selecionarIcone(this)"></i>
+      <i class="fas fa-calendar" onclick="selecionarIcone(this)"></i>
+      <i class="fas fa-compass-drafting" onclick="selecionarIcone(this)"></i>
+    </div>
 
+    <br>
     <button onclick="salvar()">Salvar</button>
     <button onclick="fecharModal()">Fechar</button>
   </div>
 </div>
 
-<!-- SCRIPT -->
+<!-- FOOTER -->
+<div class="footer">
+Suporte: contato@nextag.com.br
+</div>
+
 <script>
-const API_URL = "SUA_API_AQUI";
+let arquivos = [];
+let projetoAtual = null;
+let iconeSelecionado = "fas fa-file";
 
-let projetoAtual=null;
-let arquivos=[];
-
-window.onload=()=>{
-  const user=JSON.parse(localStorage.getItem("userData")||"{}");
-  document.getElementById("nomeUsuario").innerText =
-    user.usuario || "Administrador";
-
-  carregarProjetos();
-};
-
-function chamarAPI(params,callback){
-  const cb="cb_"+Date.now();
-  const script=document.createElement("script");
-
-  window[cb]=function(data){
-    callback(data);
-    delete window[cb];
-    script.remove();
-  }
-
-  script.src=API_URL+"?"+new URLSearchParams(params)+"&callback="+cb;
-  document.body.appendChild(script);
-}
-
-function logout(){
-  localStorage.clear();
-  location.reload();
-}
-
-function carregarProjetos(){
-  chamarAPI({action:"getProjetos"},res=>{
-    const sel=document.getElementById("projetoSelect");
-
-    res.projetos.forEach(p=>{
-      const o=document.createElement("option");
-      o.value=p.id_projeto;
-      o.textContent=p.nome;
-      o.dataset.logo=p.logo;
-      sel.appendChild(o);
-    });
-  });
+function selecionarIcone(el){
+  document.querySelectorAll(".icon-picker i").forEach(i=>i.classList.remove("selected"));
+  el.classList.add("selected");
+  iconeSelecionado = el.className;
 }
 
 function selecionarProjeto(){
-  const sel=document.getElementById("projetoSelect");
-  const opt=sel.selectedOptions[0];
-
-  projetoAtual=sel.value;
-
-  document.getElementById("logoProjeto").src=opt.dataset.logo;
-
+  projetoAtual = document.getElementById("projetoSelect").value;
   carregarArquivos();
 }
 
 function carregarArquivos(){
-  chamarAPI({action:"getArquivos",projeto:projetoAtual},res=>{
-    arquivos=res.arquivos;
-    renderArquivos();
+  chamarAPI({action:"getArquivos", projeto:projetoAtual}, res=>{
+    arquivos = res.arquivos;
+    render();
   });
 }
 
-function renderArquivos(){
-  const lista=document.getElementById("listaArquivos");
+function render(){
+  const lista = document.getElementById("listaArquivos");
   lista.innerHTML="";
 
   arquivos.forEach(a=>{
-    const tr=document.createElement("tr");
-
-    tr.innerHTML=`
-      <td><i class="${a.icone}"></i> ${a.nome}</td>
-      <td class="actions">
-        <button onclick="window.open('${a.link}')"><i class="fas fa-eye"></i></button>
-        <button onclick="editar('${a.nome}')"><i class="fas fa-edit"></i></button>
-        <button onclick="window.open('${a.link}')"><i class="fas fa-download"></i></button>
-        <button onclick="excluir('${a.nome}')"><i class="fas fa-trash"></i></button>
-      </td>
-    `;
-
-    lista.appendChild(tr);
+    lista.innerHTML += `
+      <div class="file">
+        <div><i class="${a.icone}"></i> ${a.nome}</div>
+        <div class="actions">
+          <button onclick="window.open('${a.link}')">👁</button>
+          <button onclick="editar('${a.nome}','${a.link}','${a.icone}')">✏</button>
+          <button onclick="excluir('${a.nome}')">🗑</button>
+        </div>
+      </div>`;
   });
 }
 
-function ordenarArquivos(){
-  const tipo=document.getElementById("ordenar").value;
+function ordenar(){
+  const tipo = document.getElementById("ordem").value;
 
-  if(tipo==="nome"){
-    arquivos.sort((a,b)=>a.nome.localeCompare(b.nome));
-  }else{
-    arquivos.sort((a,b)=>new Date(b.data)-new Date(a.data));
-  }
-
-  renderArquivos();
-}
-
-function abrirModal(){modal.style.display="flex";}
-function fecharModal(){modal.style.display="none";}
-
-function salvar(){
-  chamarAPI({
-    action:"addArquivo",
-    projeto:projetoAtual,
-    nome:nomeArquivo.value,
-    link:fileLink.value,
-    icone:icone.value
-  },()=>{
-    fecharModal();
-    carregarArquivos();
+  arquivos.sort((a,b)=>{
+    if(tipo==="az") return a.nome.localeCompare(b.nome);
+    return b.nome.localeCompare(a.nome);
   });
+
+  render();
 }
 
-function editar(nome){
-  const novoNome=prompt("Novo nome:", nome);
-  const novoLink=prompt("Novo link:");
-
-  chamarAPI({
-    action:"addArquivo",
-    projeto:projetoAtual,
-    nome:novoNome,
-    link:novoLink
-  },carregarArquivos);
+function editar(nome,link,icone){
+  document.getElementById("modal").style.display="flex";
+  nomeArquivo.value = nome;
+  fileLink.value = link;
+  iconeSelecionado = icone;
 }
 
-function excluir(nome){
-  if(confirm("Excluir?")){
-    chamarAPI({
-      action:"deleteArquivo",
-      projeto:projetoAtual,
-      nome
-    },carregarArquivos);
-  }
+function fecharModal(){
+  document.getElementById("modal").style.display="none";
 }
 
-function abrirHistorico(){
-  alert("Histórico (podemos evoluir depois)");
+function toggleTema(){
+  document.body.classList.toggle("light");
 }
 </script>
 
