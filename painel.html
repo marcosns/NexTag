@@ -23,6 +23,12 @@ body{
   color:#fff;
 }
 
+.logo-box{
+  background:#fff;
+  padding:5px 10px;
+  border-radius:8px;
+}
+
 .logo{
   height:40px;
 }
@@ -30,9 +36,10 @@ body{
 .user-area{
   display:flex;
   align-items:center;
-  gap:15px;
+  gap:10px;
 }
 
+/* BOTÕES */
 button{
   cursor:pointer;
   border:none;
@@ -82,7 +89,7 @@ button{
   background:#fff;
   padding:20px;
   border-radius:10px;
-  width:300px;
+  width:320px;
 }
 
 input, select{
@@ -91,7 +98,12 @@ input, select{
   margin:5px 0;
 }
 
-/* VISUALIZAÇÃO */
+/* ICON SELECT */
+.icon-option{
+  font-size:18px;
+}
+
+/* VIEWER */
 .viewer{
   position:fixed;
   top:0;
@@ -121,18 +133,25 @@ input, select{
 <body>
 
 <div class="header">
-  <img src="nextag_logo.png" class="logo">
+
+  <div class="logo-box">
+    <img src="nextag_logo.png" class="logo">
+  </div>
 
   <div class="user-area">
+
+    <select id="projetoSelect"></select>
+
     <span id="userNome"></span>
 
     <button class="btn" onclick="abrirTag()">
-      <i class="fas fa-eye"></i> Ver TAG
+      <i class="fas fa-eye"></i>
     </button>
 
     <button class="btn-danger" onclick="logout()">
       <i class="fas fa-right-from-bracket"></i>
     </button>
+
   </div>
 </div>
 
@@ -150,17 +169,17 @@ input, select{
 <div class="modal" id="modal">
   <div class="modal-content">
 
-    <h3 id="modalTitulo">Novo</h3>
+    <h3 id="modalTitulo">Arquivo</h3>
 
     <input id="nome" placeholder="Nome do arquivo">
     <input id="link" placeholder="Link">
 
     <select id="icone">
-      <option value="fas fa-file">Arquivo</option>
-      <option value="fas fa-file-pdf">PDF</option>
-      <option value="fas fa-image">Imagem</option>
-      <option value="fas fa-video">Vídeo</option>
-      <option value="fas fa-file-word">Word</option>
+      <option value="fas fa-file">📄 Arquivo</option>
+      <option value="fas fa-file-pdf">📕 PDF</option>
+      <option value="fas fa-image">🖼 Imagem</option>
+      <option value="fas fa-video">🎥 Vídeo</option>
+      <option value="fas fa-file-word">📘 Word</option>
     </select>
 
     <button class="btn" onclick="salvar()">Salvar</button>
@@ -185,17 +204,17 @@ input, select{
 const API = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
 
 let user = JSON.parse(localStorage.getItem("userData"));
-let editando = null;
+let projetoAtual = null;
 
-/* 🔐 PROTEÇÃO */
+/* PROTEÇÃO */
 if(!user){
   window.location.href = "index.html";
 }
 
-/* 👤 USER */
+/* USER */
 document.getElementById("userNome").innerText = user.usuario;
 
-/* API JSONP */
+/* API */
 function api(params, cb){
   const s = document.createElement("script");
   const callback = "cb_"+Date.now();
@@ -213,22 +232,42 @@ function api(params, cb){
 /* LOGOUT */
 function logout(){
   localStorage.removeItem("userData");
-  window.location.href = "index.html"; // 🔥 CORRIGIDO
+  window.location.href = "index.html";
 }
 
 /* TAG */
 function abrirTag(){
-  window.open("tag.html", "_blank");
+  window.open("tag.html?projeto="+projetoAtual, "_blank");
 }
 
-/* LISTAR */
-function carregar(){
-  const projeto = user.projetos[0];
+/* PROJETOS */
+function carregarProjetos(){
+
+  const select = document.getElementById("projetoSelect");
+  select.innerHTML = "";
+
+  user.projetos.forEach(p=>{
+    select.innerHTML += `<option value="${p}">${p}</option>`;
+  });
+
+  projetoAtual = user.projetos[0];
+
+  select.onchange = ()=>{
+    projetoAtual = select.value;
+    carregarArquivos();
+  };
+
+  carregarArquivos();
+}
+
+/* ARQUIVOS */
+function carregarArquivos(){
 
   api({
     action:"getArquivos",
-    projeto
+    projeto:projetoAtual
   }, res=>{
+
     const lista = document.getElementById("lista");
     lista.innerHTML = "";
 
@@ -240,27 +279,20 @@ function carregar(){
           </div>
 
           <div>
-            <button onclick='visualizar("${a.link}")'>
-              <i class="fas fa-eye"></i>
-            </button>
-
-            <button onclick='editar(${JSON.stringify(a)})'>
-              <i class="fas fa-pen"></i>
-            </button>
-
-            <button onclick='excluir("${a.nome}")'>
-              <i class="fas fa-trash"></i>
-            </button>
+            <button onclick='visualizar("${a.link}")'><i class="fas fa-eye"></i></button>
+            <button onclick='editar(${JSON.stringify(a)})'><i class="fas fa-pen"></i></button>
+            <button onclick='excluir("${a.nome}")'><i class="fas fa-trash"></i></button>
           </div>
         </div>
       `;
     });
+
   });
 }
 
 /* MODAL */
 function abrirModal(){
-  editando = null;
+  limparFormulario();
   document.getElementById("modal").style.display="flex";
 }
 
@@ -268,9 +300,17 @@ function fecharModal(){
   document.getElementById("modal").style.display="none";
 }
 
+/* LIMPAR BUG */
+function limparFormulario(){
+  document.getElementById("nome").value = "";
+  document.getElementById("link").value = "";
+  document.getElementById("icone").value = "fas fa-file";
+}
+
 /* EDITAR */
 function editar(a){
-  editando = a.nome;
+
+  limparFormulario();
 
   document.getElementById("nome").value = a.nome;
   document.getElementById("link").value = a.link;
@@ -281,29 +321,30 @@ function editar(a){
 
 /* SALVAR */
 function salvar(){
+
   api({
     action:"addArquivo",
-    projeto:user.projetos[0],
+    projeto:projetoAtual,
     nome:document.getElementById("nome").value,
     link:document.getElementById("link").value,
     icone:document.getElementById("icone").value,
     usuario:user.usuario
   }, ()=>{
     fecharModal();
-    carregar();
+    carregarArquivos();
   });
 }
 
 /* EXCLUIR */
 function excluir(nome){
-  if(!confirm("Deseja excluir?")) return;
+  if(!confirm("Excluir arquivo?")) return;
 
   api({
     action:"deleteArquivo",
-    projeto:user.projetos[0],
+    projeto:projetoAtual,
     nome,
     usuario:user.usuario
-  }, carregar);
+  }, carregarArquivos);
 }
 
 /* VIEWER */
@@ -318,7 +359,7 @@ function fecharViewer(){
 }
 
 /* INIT */
-carregar();
+carregarProjetos();
 
 </script>
 
