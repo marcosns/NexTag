@@ -1,257 +1,5 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Painel NexTag</title>
-
-<link rel="icon" href="https://raw.githubusercontent.com/marcosns/NexTag/main/favicon.ico">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<style>
-body{
-  margin:0;
-  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
-  background:#111;
-  color:#fff;
-}
-
-.container{
-  max-width:900px;
-  margin:20px auto;
-  padding:20px;
-  border-radius:20px;
-  background:rgba(255,255,255,0.08);
-  backdrop-filter:blur(20px);
-}
-
-.logo-main{
-  display:block;
-  margin:0 auto 10px;
-  max-width:140px;
-  cursor:pointer;
-}
-
-#logoProjeto{
-  display:block;
-  margin:10px auto 20px;
-  max-height:70px;
-}
-
-.top{
-  display:flex;
-  justify-content:space-between;
-}
-
-.logout{
-  font-size:12px;
-}
-
-select{
-  width:250px;
-  padding:10px;
-  border-radius:10px;
-  margin:10px auto;
-  display:block;
-  background:#222;
-  color:#fff;
-}
-
-button{
-  border:none;
-  padding:8px;
-  border-radius:8px;
-  cursor:pointer;
-  background:#333;
-  color:#fff;
-}
-
-.header-arquivos{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-top:20px;
-}
-
-.actions{
-  display:flex;
-  gap:6px;
-  flex-wrap:nowrap;
-}
-
-.actions button{
-  flex:1;
-  font-size:14px;
-}
-
-table{
-  width:100%;
-  margin-top:10px;
-}
-
-td{
-  padding:10px;
-}
-
-/* MODAL */
-.modal{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  display:none;
-  background:rgba(0,0,0,0.7);
-  justify-content:center;
-  align-items:center;
-}
-
-.modal-content{
-  background:#222;
-  padding:20px;
-  border-radius:15px;
-  width:90%;
-  max-width:400px;
-}
-
-.icon-picker{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.icon-picker i{
-  padding:10px;
-  background:#333;
-  border-radius:10px;
-  cursor:pointer;
-}
-
-.icon-picker i.selected{
-  background:#4CAF50;
-}
-
-.footer{
-  text-align:center;
-  margin-top:20px;
-  opacity:0.6;
-}
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-<!-- LOGIN -->
-<div id="loginDiv">
-<img class="logo-main" src="https://raw.githubusercontent.com/marcosns/NexTag/main/nextag_logo.png">
-
-<input id="usuario" placeholder="Usuário">
-<input id="senha" type="password" placeholder="Senha">
-
-<button onclick="login()" style="width:100%">Entrar</button>
-</div>
-
-<!-- PAINEL -->
-<div id="painel" style="display:none;">
-
-<div class="top">
-
-  <div style="display:flex; gap:8px;">
-    <button onclick="abrirHistorico()">📜</button>
-    <button onclick="abrirInstrucoes()">❓</button>
-  </div>
-
-  <button class="logout" onclick="logout()">Sair</button>
-
-</div>
-
-<img class="logo-main"
-onclick="alert('3di.printer3d@gmail.com')"
-src="https://raw.githubusercontent.com/marcosns/NexTag/main/nextag_logo.png">
-
-<img id="logoProjeto">
-
-<select id="projetoSelect" onchange="selecionarProjeto()"></select>
-
-<div class="header-arquivos">
-  <h3>Arquivos</h3>
-  <button onclick="abrirModal()">+ Adicionar</button>
-</div>
-
-<table>
-  <tbody id="listaArquivos"></tbody>
-</table>
-
-</div>
-
-<div class="footer">NexTag ©</div>
-
-</div>
-
-<!-- MODAL -->
-<div class="modal" id="modal">
-<div class="modal-content">
-
-<h3>Novo arquivo</h3>
-
-<input id="nomeArquivo" placeholder="Nome do arquivo">
-
-<p>Selecione o ícone:</p>
-<div class="icon-picker">
-<i class="fas fa-file" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-regular fa-file-pdf" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-image" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-folder" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-solid fa-shield-halved" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-address-book" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-book" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-calendar" onclick="selecionarIcone(this)"></i>
-<i class="fas fa-compass-drafting" onclick="selecionarIcone(this)"></i>
-</div>
-
-<input id="fileLink" placeholder="Cole o link do arquivo">
-
-<br><br>
-<button onclick="salvar()">Salvar</button>
-<button onclick="fecharModal()">Cancelar</button>
-
-</div>
-</div>
-
-<!-- HISTORICO -->
-<div class="modal" id="modalHistorico">
-  <div class="modal-content">
-    <h3>Histórico do Projeto</h3>
-    <div id="conteudoHistorico"></div>
-    <br>
-    <button onclick="fecharHistorico()">Fechar</button>
-  </div>
-</div>
-
-<!-- INSTRUCOES -->
-<div class="modal" id="modalInstrucoes">
-  <div class="modal-content">
-    <h3>Instruções NexTag</h3>
-
-    <div style="font-size:14px;">
-    Instruções do NexTag, neste link você pode adicionar, alterar e excluir os links que o cliente tem acesso ao ler o NexTag pelo celular. 
-    Links compartilhados aceitos: Google Drive, OneDrive, SharePoint ou URL pública.
-    O link precisa estar com permissão de acesso:
-    Google Drive → “Qualquer pessoa com o link”
-    OneDrive → “Anyone with the link”
-    SharePoint → acesso liberado
-    </div>
-
-    <br>
-    <button onclick="fecharInstrucoes()">Fechar</button>
-  </div>
-</div>
-
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycby1bDZuXaD0rQTSPUMawKaeoB4l7sdrlAb9YXPq4xWaBo_Qn64_rUBRqAXzFanG37N_WQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
 
 let projetosPermitidos = [];
 let projetoAtual = null;
@@ -281,7 +29,7 @@ function login(){
     action:"login",
     usuario,
     senha,
-    tipo: "painel" // 🔥 NOVO
+    tipo:"painel"
   }, res=>{
 
     if(res.ok){
@@ -289,8 +37,6 @@ function login(){
       projetosPermitidos = res.projetos;
 
       localStorage.setItem("userData", JSON.stringify(res));
-
-      aplicarVisualUsuario(res);
 
       loginDiv.style.display="none";
       painel.style.display="block";
@@ -304,15 +50,6 @@ function login(){
   });
 }
 
-/* VISUAL */
-function aplicarVisualUsuario(data){
-  if(data.logo) logoProjeto.src = data.logo;
-  if(data.background){
-    document.body.style.background =
-      `url('${data.background}') center/cover no-repeat`;
-  }
-}
-
 /* AUTO LOGIN */
 window.onload = function(){
   const userData = localStorage.getItem("userData");
@@ -321,7 +58,6 @@ window.onload = function(){
     const data = JSON.parse(userData);
 
     projetosPermitidos = data.projetos;
-    aplicarVisualUsuario(data);
 
     loginDiv.style.display="none";
     painel.style.display="block";
@@ -339,6 +75,7 @@ function logout(){
 /* PROJETOS */
 function carregarProjetos(){
   chamarAPI({action:"getProjetos"}, res=>{
+
     projetoSelect.innerHTML="";
 
     const placeholder = document.createElement("option");
@@ -349,24 +86,105 @@ function carregarProjetos(){
 
     res.projetos.forEach(p=>{
       if(projetosPermitidos.includes(String(p.id_projeto))){
+
         const opt = document.createElement("option");
         opt.value = p.id_projeto;
         opt.textContent = p.nome;
+
+        // 🔥 guarda visual
+        opt.dataset.logo = p.logo || "";
+        opt.dataset.background = p.background || "";
+        opt.dataset.glass = p.glass_effect || "escuro";
+
         projetoSelect.appendChild(opt);
       }
     });
+
   });
 }
 
+/* 🔥 VISUAL DO PROJETO */
+function aplicarVisualProjeto(data){
+
+  // background
+  if(data.background){
+    document.body.style.background =
+      `url('${data.background}') center/cover no-repeat`;
+  }else{
+    document.body.style.background = "#111";
+  }
+
+  // logo
+  if(data.logo){
+    logoProjeto.src = data.logo;
+    logoProjeto.style.display = "block";
+  }else{
+    logoProjeto.style.display = "none";
+  }
+
+  // glass
+  if(data.glass_effect === "claro"){
+    aplicarTemaClaro();
+  }else{
+    aplicarTemaEscuro();
+  }
+}
+
+/* 🎨 TEMAS */
+function aplicarTemaClaro(){
+
+  document.body.style.color = "#111";
+
+  document.querySelector(".container").style.background =
+    "rgba(255,255,255,0.65)";
+
+  document.querySelectorAll("button").forEach(b=>{
+    b.style.background="#ddd";
+    b.style.color="#111";
+  });
+
+  document.querySelector("select").style.background="#eee";
+  document.querySelector("select").style.color="#111";
+}
+
+function aplicarTemaEscuro(){
+
+  document.body.style.color = "#fff";
+
+  document.querySelector(".container").style.background =
+    "rgba(0,0,0,0.4)";
+
+  document.querySelectorAll("button").forEach(b=>{
+    b.style.background="#333";
+    b.style.color="#fff";
+  });
+
+  document.querySelector("select").style.background="#222";
+  document.querySelector("select").style.color="#fff";
+}
+
+/* 🔄 SELECIONAR PROJETO */
 function selecionarProjeto(){
   if(!projetoSelect.value) return;
+
   projetoAtual = projetoSelect.value;
+
+  const opt = projetoSelect.selectedOptions[0];
+
+  // 🔥 aplica visual instantâneo
+  aplicarVisualProjeto({
+    logo: opt.dataset.logo,
+    background: opt.dataset.background,
+    glass_effect: opt.dataset.glass
+  });
+
   carregarArquivos();
 }
 
 /* ARQUIVOS */
 function carregarArquivos(){
   chamarAPI({action:"getArquivos",projeto:projetoAtual}, res=>{
+
     listaArquivos.innerHTML="";
 
     res.arquivos.forEach(a=>{
@@ -383,6 +201,7 @@ function carregarArquivos(){
 
       listaArquivos.appendChild(tr);
     });
+
   });
 }
 
@@ -416,13 +235,22 @@ function editarArquivo(nome){
   const novo = prompt("Novo link:");
   if(!novo) return;
 
-  chamarAPI({action:"addArquivo",projeto:projetoAtual,nome,link:novo}, carregarArquivos);
+  chamarAPI({
+    action:"addArquivo",
+    projeto:projetoAtual,
+    nome,
+    link:novo
+  }, carregarArquivos);
 }
 
 /* EXCLUIR */
 function excluirArquivo(nome){
   if(confirm("Excluir?")){
-    chamarAPI({action:"deleteArquivo",projeto:projetoAtual,nome}, carregarArquivos);
+    chamarAPI({
+      action:"deleteArquivo",
+      projeto:projetoAtual,
+      nome
+    }, carregarArquivos);
   }
 }
 
@@ -445,6 +273,3 @@ function abrirInstrucoes(){ modalInstrucoes.style.display="flex"; }
 function fecharInstrucoes(){ modalInstrucoes.style.display="none"; }
 
 </script>
-
-</body>
-</html>
