@@ -8,234 +8,259 @@
 
 <style>
 body{
-  font-family:Arial;
   margin:0;
+  font-family:Arial;
   background:#f4f6f9;
 }
 
-header{
-  background:#0d1b2a;
-  color:#fff;
-  padding:15px;
+/* HEADER */
+.header{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  padding:15px 30px;
+  background:#111827;
+  color:#fff;
 }
 
+.logo{
+  height:40px;
+}
+
+.user-area{
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+button{
+  cursor:pointer;
+  border:none;
+  padding:8px 12px;
+  border-radius:6px;
+}
+
+.btn{
+  background:#2563eb;
+  color:#fff;
+}
+
+.btn-danger{
+  background:#dc2626;
+  color:#fff;
+}
+
+/* CONTEÚDO */
 .container{
   padding:20px;
 }
 
-.file{
+.card{
   background:#fff;
   padding:15px;
+  border-radius:10px;
   margin-bottom:10px;
-  border-radius:8px;
   display:flex;
   justify-content:space-between;
-}
-
-button{
-  border:none;
-  padding:8px 12px;
-  margin:2px;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-.actions button{
-  background:#eee;
-}
-
-.add-btn{
-  background:#00c3ff;
-  color:#fff;
-}
-
-#modal, #previewModal{
-  display:none;
-  position:fixed;
-  top:0; left:0;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.6);
-  justify-content:center;
   align-items:center;
 }
 
-.modal-box{
+/* MODAL */
+.modal{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+
+.modal-content{
   background:#fff;
   padding:20px;
   border-radius:10px;
   width:300px;
 }
 
-.preview-box{
-  width:80%;
-  height:80%;
-  background:#fff;
+input, select{
+  width:100%;
+  padding:8px;
+  margin:5px 0;
 }
 
-.preview-box iframe{
+/* VISUALIZAÇÃO */
+.viewer{
+  position:fixed;
+  top:0;
+  left:0;
   width:100%;
   height:100%;
+  background:#000;
+  display:none;
+  flex-direction:column;
+}
+
+.viewer iframe{
+  flex:1;
   border:none;
+}
+
+.viewer .top{
+  padding:10px;
+  background:#111;
+  color:#fff;
+  display:flex;
+  justify-content:space-between;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-  <div>
-    <b>NexTag</b>
-  </div>
+<div class="header">
+  <img src="nextag_logo.png" class="logo">
 
-  <div>
+  <div class="user-area">
     <span id="userNome"></span>
-    <button onclick="logout()">
+
+    <button class="btn" onclick="abrirTag()">
+      <i class="fas fa-eye"></i> Ver TAG
+    </button>
+
+    <button class="btn-danger" onclick="logout()">
       <i class="fas fa-right-from-bracket"></i>
     </button>
   </div>
-</header>
+</div>
 
 <div class="container">
 
-  <select id="projetoSelect" onchange="selecionarProjeto()"></select>
-
-  <select id="ordem" onchange="ordenar()">
-    <option value="az">A-Z</option>
-    <option value="za">Z-A</option>
-  </select>
-
-  <button class="add-btn" onclick="abrirModal()">
-    <i class="fas fa-plus"></i> Adicionar
+  <button class="btn" onclick="abrirModal()">
+    <i class="fas fa-plus"></i> Novo Arquivo
   </button>
 
-  <div id="listaArquivos"></div>
+  <div id="lista"></div>
 
 </div>
 
 <!-- MODAL -->
-<div id="modal">
-  <div class="modal-box">
+<div class="modal" id="modal">
+  <div class="modal-content">
 
-    <input id="nomeArquivo" placeholder="Nome"><br><br>
-    <input id="fileLink" placeholder="Link"><br><br>
+    <h3 id="modalTitulo">Novo</h3>
 
-    <button onclick="salvar()">Salvar</button>
+    <input id="nome" placeholder="Nome do arquivo">
+    <input id="link" placeholder="Link">
+
+    <select id="icone">
+      <option value="fas fa-file">Arquivo</option>
+      <option value="fas fa-file-pdf">PDF</option>
+      <option value="fas fa-image">Imagem</option>
+      <option value="fas fa-video">Vídeo</option>
+      <option value="fas fa-file-word">Word</option>
+    </select>
+
+    <button class="btn" onclick="salvar()">Salvar</button>
     <button onclick="fecharModal()">Cancelar</button>
 
   </div>
 </div>
 
-<!-- PREVIEW -->
-<div id="previewModal"></div>
+<!-- VIEWER -->
+<div class="viewer" id="viewer">
+  <div class="top">
+    <button onclick="fecharViewer()">Fechar</button>
+    <a id="download" target="_blank">
+      <button>Download</button>
+    </a>
+  </div>
+  <iframe id="frame"></iframe>
+</div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
 
-let arquivos = [];
-let projetoAtual = null;
-let usuarioLogado = null;
+const API = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
 
-/* LOGIN CHECK */
-document.addEventListener("DOMContentLoaded", () => {
+let user = JSON.parse(localStorage.getItem("userData"));
+let editando = null;
 
-  const userData = JSON.parse(localStorage.getItem("userData") || "null");
-
-  if(!userData){
-    window.location.href = "index.html";
-    return;
-  }
-
-  usuarioLogado = userData.usuario;
-  document.getElementById("userNome").innerText = usuarioLogado;
-
-  carregarProjetos();
-});
-
-/* API */
-function chamarAPI(params, callback){
-
-  const cb = "cb_" + Date.now();
-
-  window[cb] = function(data){
-    callback(data);
-    delete window[cb];
-  };
-
-  const script = document.createElement("script");
-  script.src = API_URL + "?" + new URLSearchParams({...params, callback:cb});
-  document.body.appendChild(script);
+/* 🔐 PROTEÇÃO */
+if(!user){
+  window.location.href = "index.html";
 }
 
-/* PROJETOS */
-function carregarProjetos(){
+/* 👤 USER */
+document.getElementById("userNome").innerText = user.usuario;
 
-  chamarAPI({action:"getProjetos"}, res=>{
-    const select = document.getElementById("projetoSelect");
+/* API JSONP */
+function api(params, cb){
+  const s = document.createElement("script");
+  const callback = "cb_"+Date.now();
 
-    select.innerHTML = "<option>Selecione</option>";
+  window[callback] = res=>{
+    cb(res);
+    delete window[callback];
+    s.remove();
+  };
 
-    res.projetos.forEach(p=>{
-      select.innerHTML += `<option value="${p.id_projeto}">${p.nome}</option>`;
+  s.src = API + "?" + new URLSearchParams(params) + "&callback=" + callback;
+  document.body.appendChild(s);
+}
+
+/* LOGOUT */
+function logout(){
+  localStorage.removeItem("userData");
+  window.location.href = "index.html"; // 🔥 CORRIGIDO
+}
+
+/* TAG */
+function abrirTag(){
+  window.open("tag.html", "_blank");
+}
+
+/* LISTAR */
+function carregar(){
+  const projeto = user.projetos[0];
+
+  api({
+    action:"getArquivos",
+    projeto
+  }, res=>{
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+
+    res.arquivos.forEach(a=>{
+      lista.innerHTML += `
+        <div class="card">
+          <div>
+            <i class="${a.icone}"></i> ${a.nome}
+          </div>
+
+          <div>
+            <button onclick='visualizar("${a.link}")'>
+              <i class="fas fa-eye"></i>
+            </button>
+
+            <button onclick='editar(${JSON.stringify(a)})'>
+              <i class="fas fa-pen"></i>
+            </button>
+
+            <button onclick='excluir("${a.nome}")'>
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `;
     });
   });
 }
 
-/* SELECIONAR */
-function selecionarProjeto(){
-  projetoAtual = document.getElementById("projetoSelect").value;
-  carregarArquivos();
-}
-
-/* ARQUIVOS */
-function carregarArquivos(){
-
-  chamarAPI({action:"getArquivos", projeto:projetoAtual}, res=>{
-    arquivos = res.arquivos || [];
-    render();
-  });
-}
-
-/* RENDER */
-function render(){
-
-  const lista = document.getElementById("listaArquivos");
-  lista.innerHTML = "";
-
-  arquivos.forEach(a=>{
-
-    lista.innerHTML += `
-      <div class="file">
-        <div><i class="${a.icone}"></i> ${a.nome}</div>
-
-        <div class="actions">
-          <button onclick="preview('${a.link}')"><i class="fas fa-eye"></i></button>
-          <button onclick="excluir('${a.nome}')"><i class="fas fa-trash"></i></button>
-        </div>
-      </div>
-    `;
-  });
-}
-
-/* ORDENAÇÃO */
-function ordenar(){
-
-  const tipo = document.getElementById("ordem").value;
-
-  if(tipo==="az"){
-    arquivos.sort((a,b)=>a.nome.localeCompare(b.nome));
-  }else{
-    arquivos.sort((a,b)=>b.nome.localeCompare(a.nome));
-  }
-
-  render();
-}
-
 /* MODAL */
 function abrirModal(){
+  editando = null;
   document.getElementById("modal").style.display="flex";
 }
 
@@ -243,53 +268,58 @@ function fecharModal(){
   document.getElementById("modal").style.display="none";
 }
 
+/* EDITAR */
+function editar(a){
+  editando = a.nome;
+
+  document.getElementById("nome").value = a.nome;
+  document.getElementById("link").value = a.link;
+  document.getElementById("icone").value = a.icone;
+
+  abrirModal();
+}
+
 /* SALVAR */
 function salvar(){
-
-  chamarAPI({
+  api({
     action:"addArquivo",
-    projeto:projetoAtual,
-    nome:nomeArquivo.value,
-    link:fileLink.value,
-    usuario:usuarioLogado
+    projeto:user.projetos[0],
+    nome:document.getElementById("nome").value,
+    link:document.getElementById("link").value,
+    icone:document.getElementById("icone").value,
+    usuario:user.usuario
   }, ()=>{
     fecharModal();
-    carregarArquivos();
+    carregar();
   });
 }
 
 /* EXCLUIR */
 function excluir(nome){
+  if(!confirm("Deseja excluir?")) return;
 
-  if(confirm("Excluir?")){
-    chamarAPI({
-      action:"deleteArquivo",
-      projeto:projetoAtual,
-      nome,
-      usuario:usuarioLogado
-    }, carregarArquivos);
-  }
+  api({
+    action:"deleteArquivo",
+    projeto:user.projetos[0],
+    nome,
+    usuario:user.usuario
+  }, carregar);
 }
 
-/* PREVIEW */
-function preview(link){
-
-  const modal = document.getElementById("previewModal");
-
-  modal.innerHTML = `
-    <div class="preview-box">
-      <iframe src="${link}"></iframe>
-    </div>
-  `;
-
-  modal.style.display="flex";
+/* VIEWER */
+function visualizar(link){
+  document.getElementById("viewer").style.display="flex";
+  document.getElementById("frame").src = link;
+  document.getElementById("download").href = link;
 }
 
-/* LOGOUT */
-function logout(){
-  localStorage.removeItem("userData");
-  window.location.href = "index.html";
+function fecharViewer(){
+  document.getElementById("viewer").style.display="none";
 }
+
+/* INIT */
+carregar();
+
 </script>
 
 </body>
