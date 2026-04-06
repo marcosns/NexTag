@@ -21,24 +21,34 @@ function chamarAPI(params, callback){
   document.body.appendChild(script);
 }
 
-/* INIT */
+/* INIT 🔥 (SEM ERRO) */
 window.onload = function(){
 
   const userData = JSON.parse(localStorage.getItem("userData") || "{}");
 
-  document.getElementById("userNome").innerText = userData.usuario || "Usuário";
+  // 🔥 PROTEÇÃO TOTAL (evita erro null)
+  const elUser = document.getElementById("userNome");
+
+  if(elUser){
+    elUser.innerText = userData.usuario || "Usuário";
+  }else{
+    console.warn("Elemento userNome não encontrado");
+  }
 
   carregarProjetos();
 }
 
-/* PROJETOS (SIDEBAR 🔥) */
+/* PROJETOS */
 function carregarProjetos(){
   chamarAPI({action:"getProjetos"}, res=>{
 
-    projetos = res.projetos;
+    projetos = res.projetos || [];
 
     const select = document.getElementById("projetoSelect");
-    select.innerHTML = "<option>Selecione o projeto</option>";
+
+    if(!select) return;
+
+    select.innerHTML = "<option value=''>Selecione o projeto</option>";
 
     projetos.forEach(p=>{
       const opt = document.createElement("option");
@@ -52,7 +62,11 @@ function carregarProjetos(){
 
 /* SELECIONAR PROJETO */
 function selecionarProjeto(){
-  projetoAtual = document.getElementById("projetoSelect").value;
+  const select = document.getElementById("projetoSelect");
+
+  if(!select) return;
+
+  projetoAtual = select.value;
 
   if(!projetoAtual) return;
 
@@ -70,6 +84,9 @@ function carregarArquivos(){
 /* RENDER */
 function render(){
   const lista = document.getElementById("listaArquivos");
+
+  if(!lista) return;
+
   lista.innerHTML="";
 
   arquivos.forEach(a=>{
@@ -91,7 +108,10 @@ function render(){
 
 /* ORDENAÇÃO */
 function ordenar(){
-  const tipo = document.getElementById("ordem").value;
+  const el = document.getElementById("ordem");
+  if(!el) return;
+
+  const tipo = el.value;
 
   arquivos.sort((a,b)=>{
     if(tipo==="az") return a.nome.localeCompare(b.nome);
@@ -104,10 +124,15 @@ function ordenar(){
 
 /* EDITAR */
 function editar(nome,link,icone){
-  document.getElementById("modal").style.display="flex";
 
-  nomeArquivo.value = nome;
-  fileLink.value = link;
+  const modal = document.getElementById("modal");
+  if(!modal) return;
+
+  modal.style.display="flex";
+
+  if(window.nomeArquivo) nomeArquivo.value = nome;
+  if(window.fileLink) fileLink.value = link;
+
   iconeSelecionado = icone;
 
   document.querySelectorAll(".icon-picker i").forEach(i=>{
@@ -118,6 +143,8 @@ function editar(nome,link,icone){
 
 /* SALVAR */
 function salvar(){
+  if(!projetoAtual) return;
+
   chamarAPI({
     action:"addArquivo",
     projeto:projetoAtual,
@@ -150,10 +177,11 @@ function selecionarIcone(el){
 
 /* MODAL */
 function fecharModal(){
-  document.getElementById("modal").style.display="none";
+  const modal = document.getElementById("modal");
+  if(modal) modal.style.display="none";
 }
 
-/* HISTÓRICO 🔥 AGORA FUNCIONA */
+/* HISTÓRICO */
 function abrirHistorico(){
 
   if(!projetoAtual){
@@ -174,7 +202,7 @@ function abrirHistorico(){
   });
 }
 
-/* TEMA 🌙 */
+/* TEMA */
 function toggleTema(){
   document.body.classList.toggle("light");
 
