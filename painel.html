@@ -1,32 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Painel NexTag</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+body{
+  font-family:Arial;
+  margin:0;
+  background:#f4f6f9;
+}
+
+header{
+  background:#0d1b2a;
+  color:#fff;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.container{
+  padding:20px;
+}
+
+.file{
+  background:#fff;
+  padding:15px;
+  margin-bottom:10px;
+  border-radius:8px;
+  display:flex;
+  justify-content:space-between;
+}
+
+button{
+  border:none;
+  padding:8px 12px;
+  margin:2px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.actions button{
+  background:#eee;
+}
+
+.add-btn{
+  background:#00c3ff;
+  color:#fff;
+}
+
+#modal, #previewModal{
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.6);
+  justify-content:center;
+  align-items:center;
+}
+
+.modal-box{
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  width:300px;
+}
+
+.preview-box{
+  width:80%;
+  height:80%;
+  background:#fff;
+}
+
+.preview-box iframe{
+  width:100%;
+  height:100%;
+  border:none;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <b>NexTag</b>
+  </div>
+
+  <div>
+    <span id="userNome"></span>
+    <button onclick="logout()">
+      <i class="fas fa-right-from-bracket"></i>
+    </button>
+  </div>
+</header>
+
+<div class="container">
+
+  <select id="projetoSelect" onchange="selecionarProjeto()"></select>
+
+  <select id="ordem" onchange="ordenar()">
+    <option value="az">A-Z</option>
+    <option value="za">Z-A</option>
+  </select>
+
+  <button class="add-btn" onclick="abrirModal()">
+    <i class="fas fa-plus"></i> Adicionar
+  </button>
+
+  <div id="listaArquivos"></div>
+
+</div>
+
+<!-- MODAL -->
+<div id="modal">
+  <div class="modal-box">
+
+    <input id="nomeArquivo" placeholder="Nome"><br><br>
+    <input id="fileLink" placeholder="Link"><br><br>
+
+    <button onclick="salvar()">Salvar</button>
+    <button onclick="fecharModal()">Cancelar</button>
+
+  </div>
+</div>
+
+<!-- PREVIEW -->
+<div id="previewModal"></div>
+
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
 
 let arquivos = [];
 let projetoAtual = null;
-let iconeSelecionado = "fas fa-file";
-let editandoNome = null;
 let usuarioLogado = null;
 
-/* 🔐 PROTEÇÃO LOGIN */
+/* LOGIN CHECK */
 document.addEventListener("DOMContentLoaded", () => {
 
   const userData = JSON.parse(localStorage.getItem("userData") || "null");
 
-  if(!userData || !userData.usuario){
-    alert("Sessão expirada");
+  if(!userData){
     window.location.href = "index.html";
     return;
   }
 
   usuarioLogado = userData.usuario;
-
-  const elUser = document.getElementById("userNome");
-  if(elUser) elUser.innerText = usuarioLogado;
+  document.getElementById("userNome").innerText = usuarioLogado;
 
   carregarProjetos();
 });
 
-/* API JSONP */
+/* API */
 function chamarAPI(params, callback){
 
   const cb = "cb_" + Date.now();
@@ -45,25 +174,19 @@ function chamarAPI(params, callback){
 function carregarProjetos(){
 
   chamarAPI({action:"getProjetos"}, res=>{
-
     const select = document.getElementById("projetoSelect");
-    if(!select) return;
 
-    select.innerHTML = "<option value=''>Selecione</option>";
+    select.innerHTML = "<option>Selecione</option>";
 
     res.projetos.forEach(p=>{
       select.innerHTML += `<option value="${p.id_projeto}">${p.nome}</option>`;
     });
-
   });
 }
 
 /* SELECIONAR */
 function selecionarProjeto(){
-
   projetoAtual = document.getElementById("projetoSelect").value;
-  if(!projetoAtual) return;
-
   carregarArquivos();
 }
 
@@ -72,7 +195,7 @@ function carregarArquivos(){
 
   chamarAPI({action:"getArquivos", projeto:projetoAtual}, res=>{
     arquivos = res.arquivos || [];
-    ordenar();
+    render();
   });
 }
 
@@ -80,45 +203,31 @@ function carregarArquivos(){
 function render(){
 
   const lista = document.getElementById("listaArquivos");
-  if(!lista) return;
-
   lista.innerHTML = "";
 
   arquivos.forEach(a=>{
 
     lista.innerHTML += `
-    <div class="file">
-      <div><i class="${a.icone}"></i> ${a.nome}</div>
+      <div class="file">
+        <div><i class="${a.icone}"></i> ${a.nome}</div>
 
-      <div class="actions">
-
-        <button onclick="preview('${a.link}')" title="Visualizar">
-          <i class="fas fa-eye"></i>
-        </button>
-
-        <button onclick="editar('${a.nome}','${a.link}','${a.icone}')" title="Editar">
-          <i class="fas fa-pen"></i>
-        </button>
-
-        <button onclick="excluir('${a.nome}')" title="Excluir">
-          <i class="fas fa-trash"></i>
-        </button>
-
+        <div class="actions">
+          <button onclick="preview('${a.link}')"><i class="fas fa-eye"></i></button>
+          <button onclick="excluir('${a.nome}')"><i class="fas fa-trash"></i></button>
+        </div>
       </div>
-    </div>`;
+    `;
   });
 }
 
 /* ORDENAÇÃO */
 function ordenar(){
 
-  const tipo = document.getElementById("ordem")?.value;
+  const tipo = document.getElementById("ordem").value;
 
-  if(tipo === "az"){
+  if(tipo==="az"){
     arquivos.sort((a,b)=>a.nome.localeCompare(b.nome));
-  }
-
-  if(tipo === "za"){
+  }else{
     arquivos.sort((a,b)=>b.nome.localeCompare(a.nome));
   }
 
@@ -128,22 +237,10 @@ function ordenar(){
 /* MODAL */
 function abrirModal(){
   document.getElementById("modal").style.display="flex";
-
-  nomeArquivo.value="";
-  fileLink.value="";
-  iconeSelecionado="fas fa-file";
-  editandoNome=null;
 }
 
-/* EDITAR */
-function editar(nome,link,icone){
-
-  abrirModal();
-
-  nomeArquivo.value=nome;
-  fileLink.value=link;
-  iconeSelecionado=icone;
-  editandoNome=nome;
+function fecharModal(){
+  document.getElementById("modal").style.display="none";
 }
 
 /* SALVAR */
@@ -154,8 +251,6 @@ function salvar(){
     projeto:projetoAtual,
     nome:nomeArquivo.value,
     link:fileLink.value,
-    icone:iconeSelecionado,
-    antigo:editandoNome,
     usuario:usuarioLogado
   }, ()=>{
     fecharModal();
@@ -166,7 +261,7 @@ function salvar(){
 /* EXCLUIR */
 function excluir(nome){
 
-  if(confirm("Excluir arquivo?")){
+  if(confirm("Excluir?")){
     chamarAPI({
       action:"deleteArquivo",
       projeto:projetoAtual,
@@ -176,21 +271,13 @@ function excluir(nome){
   }
 }
 
-/* ICONES */
-function selecionarIcone(el){
-  document.querySelectorAll(".icon-picker i").forEach(i=>i.classList.remove("selected"));
-  el.classList.add("selected");
-  iconeSelecionado = el.className;
-}
-
-/* PREVIEW TAG */
+/* PREVIEW */
 function preview(link){
 
   const modal = document.getElementById("previewModal");
 
   modal.innerHTML = `
     <div class="preview-box">
-      <span onclick="fecharPreview()">✖</span>
       <iframe src="${link}"></iframe>
     </div>
   `;
@@ -198,18 +285,12 @@ function preview(link){
   modal.style.display="flex";
 }
 
-function fecharPreview(){
-  document.getElementById("previewModal").style.display="none";
-}
-
-/* FECHAR MODAL */
-function fecharModal(){
-  document.getElementById("modal").style.display="none";
-}
-
-/* LOGOUT SEGURO */
+/* LOGOUT */
 function logout(){
   localStorage.removeItem("userData");
   window.location.href = "index.html";
 }
 </script>
+
+</body>
+</html>
