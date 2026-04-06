@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-
-8">
+
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>NexTag</title>
 
 <link rel="icon" href="https://raw.githubusercontent.com/marcosns/NexTag/main/favicon.ico">
@@ -19,6 +20,7 @@ body{
   background-position:center;
 }
 
+/* login */
 #loginBox{
   text-align:center;
   margin-top:80px;
@@ -41,10 +43,10 @@ button{
   cursor:pointer;
 }
 
+/* container */
 .container{
   display:none;
   backdrop-filter: blur(12px);
-  background: rgba(0,0,0,0.4);
   border-radius:20px;
   padding:30px;
   width:90%;
@@ -53,24 +55,26 @@ button{
   text-align:center;
 }
 
+/* logo */
 #logo{
   max-width:180px;
   margin-bottom:10px;
 }
 
+/* links */
 a{
   display:flex;
   align-items:center;
   gap:10px;
   justify-content:center;
-  background:rgba(255,255,255,0.1);
   padding:12px;
   margin:10px 0;
   border-radius:10px;
   text-decoration:none;
-  color:white;
+  font-size:15px;
 }
 </style>
+
 </head>
 
 <body>
@@ -93,6 +97,7 @@ a{
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwJzJYMMr9DDc7yqNvq-jXz9pNy1o0WcbgVfto_fgy5YppuEPHmclXxKuquexU0YeE4sA/exec";
 
+/* JSONP */
 function chamarAPI(params, callback){
   const cb = "cb_" + Date.now();
   const script = document.createElement("script");
@@ -103,98 +108,159 @@ function chamarAPI(params, callback){
     script.remove();
   };
 
-  script.src = API_URL + "?" + new URLSearchParams(params) + "&callback=" + cb + "&nocache=" + Date.now();
+  script.src = API_URL + "?" + new URLSearchParams(params) + "&callback=" + cb;
 
   document.body.appendChild(script);
 }
 
+/* projeto */
 function getProjeto(){
   return new URLSearchParams(window.location.search).get("id");
 }
 
+/* LOGIN */
 function fazerLogin(){
-  const usuario = document.getElementById("usuario").value;
-  const senha = document.getElementById("senha").value;
+  const usuario = usuarioEl.value;
+  const senha = senhaEl.value;
 
   chamarAPI({
     action:"login",
     usuario,
     senha,
     tipo:"tag"
-  }, function(res){
-
+  }, res=>{
     if(res.ok){
       localStorage.setItem("user", JSON.stringify(res));
       iniciarSistema();
     }else{
-      document.getElementById("erro").innerText = res.erro || "Login inválido";
+      erro.innerText = res.erro || "Login inválido";
     }
-
   });
 }
 
+/* INICIO */
 function iniciarSistema(){
+
   const user = JSON.parse(localStorage.getItem("user"));
   const projeto = getProjeto();
 
-  if(!user) return;
-
-  if(!user.projetos.includes(projeto)){
+  if(user && !user.projetos.includes(projeto)){
     alert("Sem acesso");
     return;
   }
 
-  document.getElementById("loginBox").style.display = "none";
-  document.querySelector(".container").style.display = "block";
+  loginBox.style.display="none";
+  document.querySelector(".container").style.display="block";
 
-  carregar();
+  carregar(user);
 }
 
-function carregar(){
+/* CARREGAR */
+function carregar(user){
 
   const projeto = getProjeto();
 
-  document.getElementById("lista").innerHTML = "";
-  document.body.style.backgroundImage = "";
+  /* projeto */
+  chamarAPI({action:"getProjeto",id_projeto:projeto}, d=>{
+    if(!d.projeto) return;
+    nome.innerText = d.projeto.nome;
+    descricao.innerText = d.projeto.descricao;
+  });
 
-  chamarAPI({ action:"getProjeto", id_projeto: projeto }, data=>{
-    if(data.projeto){
-      document.getElementById("nome").innerText = data.projeto.nome || "";
-      document.getElementById("descricao").innerText = data.projeto.descricao || "";
+  /* visual */
+  chamarAPI({
+    action:"getVisualProjeto",
+    projeto,
+    usuario: user?.usuario || ""
+  }, d=>{
+    if(!d.ok) return;
+
+    if(d.background){
+      document.body.style.backgroundImage = `url('${d.background}')`;
+      detectarTema(d.background);
+    }
+
+    if(d.logo){
+      logo.src = d.logo;
     }
   });
 
-  chamarAPI({ action:"getVisualProjeto", projeto }, data=>{
-    if(data.ok){
-      if(data.background){
-        document.body.style.backgroundImage = `url('${data.background}')`;
-      }
-      if(data.logo){
-        document.getElementById("logo").src = data.logo;
-      }
-    }
-  });
-
-  chamarAPI({ action:"getArquivos", projeto }, data=>{
-    const lista = document.getElementById("lista");
-    lista.innerHTML = "";
-
-    (data.arquivos || []).forEach(a=>{
-      const link = document.createElement("a");
-      link.href = a.link;
-      link.target = "_blank";
-      link.innerHTML = `<i class="${a.icone || 'fas fa-file'}"></i> ${a.nome}`;
-      lista.appendChild(link);
+  /* arquivos */
+  chamarAPI({action:"getArquivos",projeto}, d=>{
+    lista.innerHTML="";
+    (d.arquivos||[]).forEach(a=>{
+      const el = document.createElement("a");
+      el.href = a.link;
+      el.target="_blank";
+      el.innerHTML = `<i class="${a.icone||'fas fa-file'}"></i> ${a.nome}`;
+      lista.appendChild(el);
     });
   });
 }
 
-window.onload = ()=>{
-  const user = localStorage.getItem("user");
-  if(user) iniciarSistema();
+/* 🔥 DETECTA TEMA */
+function detectarTema(url){
+  const img = new Image();
+  img.crossOrigin="Anonymous";
+
+  img.onload = ()=>{
+    const c=document.createElement("canvas");
+    const ctx=c.getContext("2d");
+    c.width=50; c.height=50;
+    ctx.drawImage(img,0,0,50,50);
+
+    const data=ctx.getImageData(0,0,50,50).data;
+    let total=0;
+
+    for(let i=0;i<data.length;i+=4){
+      total += (data[i]+data[i+1]+data[i+2])/3;
+    }
+
+    const media = total/(data.length/4);
+
+    if(media>180) temaClaro();
+    else temaEscuro();
+  };
+
+  img.src=url;
+}
+
+/* TEMAS */
+function temaClaro(){
+  document.body.style.color="#111";
+  document.querySelector(".container").style.background="rgba(255,255,255,0.6)";
+  document.querySelectorAll("a").forEach(a=>{
+    a.style.background="rgba(0,0,0,0.1)";
+    a.style.color="#111";
+  });
+}
+
+function temaEscuro(){
+  document.body.style.color="white";
+  document.querySelector(".container").style.background="rgba(0,0,0,0.4)";
+  document.querySelectorAll("a").forEach(a=>{
+    a.style.background="rgba(255,255,255,0.1)";
+    a.style.color="white";
+  });
+}
+
+/* INIT */
+window.onload = function(){
+
+  const projeto = getProjeto();
+
+  chamarAPI({action:"getAcessoTag", projeto}, res=>{
+
+    if(res.acesso_tag === "livre"){
+      iniciarSistema(); // 🔥 entra direto
+    }else{
+      loginBox.style.display="block";
+    }
+
+  });
+
 };
 </script>
 
 </body>
 </html>
-```
