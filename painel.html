@@ -4,18 +4,24 @@
 <meta charset="UTF-8">
 <title>Painel NexTag</title>
 
-<!-- FAVICON -->
-<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/906/906334.png">
+<!-- SEUS ARQUIVOS -->
+<link rel="icon" href="favicon.ico">
 
-<!-- FONT AWESOME -->
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
+:root{
+  --glass: rgba(255,255,255,0.08);
+  --border: rgba(255,255,255,0.15);
+  --primary: #4da3ff;
+}
+
+/* BODY */
 body{
   margin:0;
   font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  background: url('fundo6.jpg') center/cover no-repeat fixed;
   color:#fff;
 }
 
@@ -25,56 +31,74 @@ body{
   justify-content:space-between;
   align-items:center;
   padding:15px 30px;
-  background:rgba(0,0,0,0.5);
-  backdrop-filter: blur(10px);
+  background:rgba(0,0,0,0.6);
+  backdrop-filter: blur(12px);
+  border-bottom:1px solid var(--border);
 }
 
-.logo{
-  font-size:22px;
-  font-weight:bold;
+.logo img{
+  height:40px;
 }
 
 .user{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:12px;
+  font-size:14px;
 }
 
 .logout{
   cursor:pointer;
   color:#ff5c5c;
+  font-size:18px;
 }
 
 /* CONTAINER */
 .container{
-  max-width:1000px;
+  max-width:1100px;
   margin:30px auto;
-  padding:20px;
-  border-radius:12px;
-  background:rgba(255,255,255,0.08);
-  backdrop-filter: blur(15px);
+  padding:25px;
+  border-radius:14px;
+  background:var(--glass);
+  backdrop-filter: blur(18px);
+  border:1px solid var(--border);
 }
 
 /* TITULO */
 .title{
-  margin-bottom:20px;
+  margin:10px 0 20px;
+  font-size:20px;
+  opacity:0.9;
 }
 
 /* CONTROLES */
 .controls{
   display:flex;
   justify-content:space-between;
-  margin-bottom:15px;
+  align-items:center;
+  margin-bottom:20px;
 }
 
 /* BOTÕES */
 button{
-  padding:8px 12px;
+  padding:8px 14px;
   border:none;
-  border-radius:6px;
+  border-radius:8px;
   cursor:pointer;
-  background:#333;
+  background:rgba(255,255,255,0.1);
   color:#fff;
+  transition:0.2s;
+}
+
+button:hover{
+  background:var(--primary);
+}
+
+/* SELECT */
+select, input{
+  padding:8px;
+  border-radius:6px;
+  border:none;
 }
 
 /* TABELA */
@@ -84,8 +108,8 @@ table{
 }
 
 td{
-  padding:10px;
-  border-bottom:1px solid #444;
+  padding:12px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
 }
 
 .actions button{
@@ -94,7 +118,7 @@ td{
 
 /* LOGO CLIENTE */
 #logoProjeto{
-  max-height:70px;
+  max-height:60px;
   margin-bottom:10px;
 }
 
@@ -112,15 +136,16 @@ td{
 }
 
 .modal-content{
-  background:#222;
-  padding:20px;
+  background:#1e1e1e;
+  padding:25px;
   border-radius:10px;
+  width:320px;
 }
 
 /* FOOTER */
 .footer{
   text-align:center;
-  padding:15px;
+  padding:20px;
   font-size:12px;
   opacity:0.7;
 }
@@ -131,7 +156,9 @@ td{
 
 <!-- HEADER -->
 <div class="header">
-  <div class="logo">🚀 NexTag Admin</div>
+  <div class="logo">
+    <img src="nextag_logo.png">
+  </div>
 
   <div class="user">
     <span id="nomeUsuario"></span>
@@ -139,6 +166,7 @@ td{
   </div>
 </div>
 
+<!-- CONTEUDO -->
 <div class="container">
 
   <div class="controls">
@@ -157,7 +185,7 @@ td{
   <img id="logoProjeto">
 
   <h3 class="title">
-    Bem vindo ao portal de Administração do NexTag
+    Bem-vindo ao portal de Administração do NexTag
   </h3>
 
   <select id="projetoSelect" onchange="selecionarProjeto()"></select>
@@ -168,13 +196,16 @@ td{
 
 </div>
 
+<!-- FOOTER -->
 <div class="footer">
-  Suporte: contato@nextag.com | © NexTag
+  Suporte: contato@nextag.com.br | © NexTag
 </div>
 
 <!-- MODAL -->
 <div id="modal" class="modal">
   <div class="modal-content">
+    <h3>Novo Arquivo</h3><br>
+
     <input id="nomeArquivo" placeholder="Nome"><br><br>
     <input id="fileLink" placeholder="Link"><br><br>
 
@@ -196,7 +227,14 @@ const API_URL = "SUA_API_AQUI";
 let projetoAtual=null;
 let arquivos=[];
 
-/* API */
+window.onload=()=>{
+  const user=JSON.parse(localStorage.getItem("userData")||"{}");
+  document.getElementById("nomeUsuario").innerText =
+    user.usuario || "Administrador";
+
+  carregarProjetos();
+};
+
 function chamarAPI(params,callback){
   const cb="cb_"+Date.now();
   const script=document.createElement("script");
@@ -211,23 +249,11 @@ function chamarAPI(params,callback){
   document.body.appendChild(script);
 }
 
-/* LOGIN SIMPLES */
-window.onload=()=>{
-  const user=JSON.parse(localStorage.getItem("userData")||"{}");
-
-  document.getElementById("nomeUsuario").innerText =
-    user.usuario || "Admin";
-
-  carregarProjetos();
-}
-
-/* LOGOUT */
 function logout(){
   localStorage.clear();
   location.reload();
 }
 
-/* PROJETOS */
 function carregarProjetos(){
   chamarAPI({action:"getProjetos"},res=>{
     const sel=document.getElementById("projetoSelect");
@@ -242,7 +268,6 @@ function carregarProjetos(){
   });
 }
 
-/* SELEÇÃO */
 function selecionarProjeto(){
   const sel=document.getElementById("projetoSelect");
   const opt=sel.selectedOptions[0];
@@ -254,7 +279,6 @@ function selecionarProjeto(){
   carregarArquivos();
 }
 
-/* ARQUIVOS */
 function carregarArquivos(){
   chamarAPI({action:"getArquivos",projeto:projetoAtual},res=>{
     arquivos=res.arquivos;
@@ -272,10 +296,10 @@ function renderArquivos(){
     tr.innerHTML=`
       <td><i class="${a.icone}"></i> ${a.nome}</td>
       <td class="actions">
-        <button onclick="window.open('${a.link}')">👁️</button>
-        <button onclick="editar('${a.nome}')">✏️</button>
-        <button onclick="window.open('${a.link}')">⬇️</button>
-        <button onclick="excluir('${a.nome}')">🗑️</button>
+        <button onclick="window.open('${a.link}')"><i class="fas fa-eye"></i></button>
+        <button onclick="editar('${a.nome}')"><i class="fas fa-edit"></i></button>
+        <button onclick="window.open('${a.link}')"><i class="fas fa-download"></i></button>
+        <button onclick="excluir('${a.nome}')"><i class="fas fa-trash"></i></button>
       </td>
     `;
 
@@ -283,7 +307,6 @@ function renderArquivos(){
   });
 }
 
-/* ORDENAR */
 function ordenarArquivos(){
   const tipo=document.getElementById("ordenar").value;
 
@@ -296,11 +319,9 @@ function ordenarArquivos(){
   renderArquivos();
 }
 
-/* MODAL */
 function abrirModal(){modal.style.display="flex";}
 function fecharModal(){modal.style.display="none";}
 
-/* SALVAR */
 function salvar(){
   chamarAPI({
     action:"addArquivo",
@@ -314,9 +335,8 @@ function salvar(){
   });
 }
 
-/* EDITAR */
 function editar(nome){
-  const novoNome=prompt("Novo nome:");
+  const novoNome=prompt("Novo nome:", nome);
   const novoLink=prompt("Novo link:");
 
   chamarAPI({
@@ -327,7 +347,6 @@ function editar(nome){
   },carregarArquivos);
 }
 
-/* EXCLUIR */
 function excluir(nome){
   if(confirm("Excluir?")){
     chamarAPI({
@@ -338,9 +357,8 @@ function excluir(nome){
   }
 }
 
-/* HISTORICO */
 function abrirHistorico(){
-  alert("Histórico aqui (pode evoluir depois)");
+  alert("Histórico (podemos evoluir depois)");
 }
 </script>
 
