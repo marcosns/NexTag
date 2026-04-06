@@ -24,6 +24,11 @@ function chamarAPI(params, callback){
 function login(){
   const usuario = document.getElementById("usuario").value;
   const senha = document.getElementById("senha").value;
+  const loginDiv = document.getElementById("loginDiv");
+const painel = document.getElementById("painel");
+const projetoSelect = document.getElementById("projetoSelect");
+const listaArquivos = document.getElementById("listaArquivos");
+const logoProjeto = document.getElementById("logoProjeto");
 
   chamarAPI({
     action:"login",
@@ -52,6 +57,10 @@ function login(){
 
 /* AUTO LOGIN */
 window.onload = function(){
+
+  const loginDiv = document.getElementById("loginDiv");
+  const painel = document.getElementById("painel");
+
   const userData = localStorage.getItem("userData");
 
   if(userData){
@@ -63,6 +72,10 @@ window.onload = function(){
     painel.style.display="block";
 
     carregarProjetos();
+
+  }else{
+    loginDiv.style.display="block";
+    painel.style.display="none";
   }
 }
 
