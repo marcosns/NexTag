@@ -26,19 +26,17 @@ function chamarAPI(params, callback){
 /* INIT CORRETO 🔥 */
 window.onload = function(){
 
-  console.log({
-  loginDiv,
-  painel,
-  projetoSelect,
-  listaArquivos,
-  logoProjeto
-});
-
   loginDiv = document.getElementById("loginDiv");
   painel = document.getElementById("painel");
   projetoSelect = document.getElementById("projetoSelect");
   listaArquivos = document.getElementById("listaArquivos");
   logoProjeto = document.getElementById("logoProjeto");
+
+  // 🔥 proteção contra null
+  if(!loginDiv || !painel){
+    console.error("Elementos principais não encontrados");
+    return;
+  }
 
   const userData = localStorage.getItem("userData");
 
@@ -50,7 +48,10 @@ window.onload = function(){
     loginDiv.style.display="none";
     painel.style.display="block";
 
-    carregarProjetos();
+    if(projetoSelect){
+      carregarProjetos();
+    }
+
   }else{
     loginDiv.style.display="block";
     painel.style.display="none";
