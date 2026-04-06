@@ -108,14 +108,18 @@ function login(){
     usuario,
     senha,
     tipo:"painel"
-  }, res=>{
+ }, res=>{
 
-    if(res.ok){
+    console.log("🔎 RESPOSTA API:", res); // 👈 IMPORTANTE
+
+    if(res && res.ok){
 
       localStorage.setItem("userData", JSON.stringify(res));
 
-      // 🔐 REDIRECIONA PARA O PAINEL
+      console.log("✅ Login OK, redirecionando...");
       window.location.href = "painel.html";
+
+      // 🔐 REDIRECIONA PARA O PAINEL
 
     }else{
       alert(res.erro || "Login inválido");
