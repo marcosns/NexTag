@@ -1,6 +1,13 @@
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
 
+/* 🔥 ELEMENTOS */
+const loginDiv = document.getElementById("loginDiv");
+const painel = document.getElementById("painel");
+const projetoSelect = document.getElementById("projetoSelect");
+const listaArquivos = document.getElementById("listaArquivos");
+const logoProjeto = document.getElementById("logoProjeto");
+
 let projetosPermitidos = [];
 let projetoAtual = null;
 let iconeSelecionado = "fas fa-file";
@@ -24,11 +31,6 @@ function chamarAPI(params, callback){
 function login(){
   const usuario = document.getElementById("usuario").value;
   const senha = document.getElementById("senha").value;
-  const loginDiv = document.getElementById("loginDiv");
-const painel = document.getElementById("painel");
-const projetoSelect = document.getElementById("projetoSelect");
-const listaArquivos = document.getElementById("listaArquivos");
-const logoProjeto = document.getElementById("logoProjeto");
 
   chamarAPI({
     action:"login",
@@ -57,9 +59,6 @@ const logoProjeto = document.getElementById("logoProjeto");
 
 /* AUTO LOGIN */
 window.onload = function(){
-
-  const loginDiv = document.getElementById("loginDiv");
-  const painel = document.getElementById("painel");
 
   const userData = localStorage.getItem("userData");
 
@@ -104,11 +103,6 @@ function carregarProjetos(){
         opt.value = p.id_projeto;
         opt.textContent = p.nome;
 
-        // 🔥 guarda visual
-        opt.dataset.logo = p.logo || "";
-        opt.dataset.background = p.background || "";
-        opt.dataset.glass = p.glass_effect || "escuro";
-
         projetoSelect.appendChild(opt);
       }
     });
@@ -116,7 +110,27 @@ function carregarProjetos(){
   });
 }
 
-/* 🔥 VISUAL DO PROJETO */
+/* 🔥 BUSCA VISUAL REAL DO BACKEND */
+function carregarVisualProjeto(){
+
+  chamarAPI({
+    action:"getProjeto",
+    id_projeto: projetoAtual
+  }, res=>{
+
+    if(!res.projeto) return;
+
+    aplicarVisualProjeto({
+      logo: res.projeto.logo,
+      background: res.projeto.background,
+      glass_effect: res.projeto.glass_effect
+    });
+
+  });
+
+}
+
+/* 🔥 VISUAL */
 function aplicarVisualProjeto(data){
 
   // background
@@ -150,14 +164,6 @@ function aplicarTemaClaro(){
 
   document.querySelector(".container").style.background =
     "rgba(255,255,255,0.65)";
-
-  document.querySelectorAll("button").forEach(b=>{
-    b.style.background="#ddd";
-    b.style.color="#111";
-  });
-
-  document.querySelector("select").style.background="#eee";
-  document.querySelector("select").style.color="#111";
 }
 
 function aplicarTemaEscuro(){
@@ -166,36 +172,22 @@ function aplicarTemaEscuro(){
 
   document.querySelector(".container").style.background =
     "rgba(0,0,0,0.4)";
-
-  document.querySelectorAll("button").forEach(b=>{
-    b.style.background="#333";
-    b.style.color="#fff";
-  });
-
-  document.querySelector("select").style.background="#222";
-  document.querySelector("select").style.color="#fff";
 }
 
-/* 🔄 SELECIONAR PROJETO */
+/* SELECIONAR PROJETO */
 function selecionarProjeto(){
+
   if(!projetoSelect.value) return;
 
   projetoAtual = projetoSelect.value;
 
-  const opt = projetoSelect.selectedOptions[0];
-
-  // 🔥 aplica visual instantâneo
-  aplicarVisualProjeto({
-    logo: opt.dataset.logo,
-    background: opt.dataset.background,
-    glass_effect: opt.dataset.glass
-  });
-
+  carregarVisualProjeto(); // 🔥 CORREÇÃO AQUI
   carregarArquivos();
 }
 
 /* ARQUIVOS */
 function carregarArquivos(){
+
   chamarAPI({action:"getArquivos",projeto:projetoAtual}, res=>{
 
     listaArquivos.innerHTML="";
@@ -216,6 +208,7 @@ function carregarArquivos(){
     });
 
   });
+
 }
 
 /* MODAL */
