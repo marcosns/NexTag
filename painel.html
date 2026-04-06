@@ -108,7 +108,7 @@ function login(){
     usuario,
     senha,
     tipo:"painel"
- }, res=>{
+  }, res=>{
 
     console.log("🔎 RESPOSTA API:", res); // 👈 IMPORTANTE
 
@@ -118,7 +118,14 @@ function login(){
 
       console.log("✅ Login OK, redirecionando...");
       window.location.href = "painel.html";
-   }
+
+    }else{
+
+      console.warn("❌ Login falhou:", res);
+
+      alert(res?.erro || "Login inválido ou API não respondeu corretamente");
+
+    }
 
   });
 }
