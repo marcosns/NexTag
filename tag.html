@@ -24,6 +24,7 @@ body{
 #loginBox{
   text-align:center;
   margin-top:80px;
+  display:none;
 }
 
 input{
@@ -53,6 +54,7 @@ button{
   max-width:500px;
   margin:40px auto;
   text-align:center;
+  transition:0.3s;
 }
 
 /* logo */
@@ -72,6 +74,7 @@ a{
   border-radius:10px;
   text-decoration:none;
   font-size:15px;
+  transition:0.2s;
 }
 </style>
 
@@ -95,7 +98,7 @@ a{
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwc940t6x2vbo0bmu4lP4v7VDsjZAtmK34uCqsza30bkMPzOvOFW4y3TjA7HZPpwSotmw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz7SqMjAux3Wq2NkLEAWMz79-0ndGJTEDC32LhNAzHq31juEOm67BGpHKWDPcNpZDbVzg/exec";
 
 /* JSONP */
 function chamarAPI(params, callback){
@@ -120,8 +123,9 @@ function getProjeto(){
 
 /* LOGIN */
 function fazerLogin(){
-  const usuario = usuarioEl.value;
-  const senha = senhaEl.value;
+
+  const usuario = document.getElementById("usuario").value;
+  const senha = document.getElementById("senha").value;
 
   chamarAPI({
     action:"login",
@@ -131,17 +135,16 @@ function fazerLogin(){
   }, res=>{
     if(res.ok){
       localStorage.setItem("user", JSON.stringify(res));
-      iniciarSistema();
+      iniciarSistema(res);
     }else{
-      erro.innerText = res.erro || "Login inválido";
+      document.getElementById("erro").innerText = res.erro || "Login inválido";
     }
   });
 }
 
 /* INICIO */
-function iniciarSistema(){
+function iniciarSistema(user=null){
 
-  const user = JSON.parse(localStorage.getItem("user"));
   const projeto = getProjeto();
 
   if(user && !user.projetos.includes(projeto)){
@@ -149,7 +152,7 @@ function iniciarSistema(){
     return;
   }
 
-  loginBox.style.display="none";
+  document.getElementById("loginBox").style.display="none";
   document.querySelector(".container").style.display="block";
 
   carregar(user);
@@ -160,29 +163,32 @@ function carregar(user){
 
   const projeto = getProjeto();
 
-  /* projeto */
   chamarAPI({action:"getProjeto",id_projeto:projeto}, d=>{
+
     if(!d.projeto) return;
-    nome.innerText = d.projeto.nome;
-    descricao.innerText = d.projeto.descricao;
-  });
 
-  /* visual */
-  chamarAPI({
-    action:"getVisualProjeto",
-    projeto,
-    usuario: user?.usuario || ""
-  }, d=>{
-    if(!d.ok) return;
+    const p = d.projeto;
 
-    if(d.background){
-      document.body.style.backgroundImage = `url('${d.background}')`;
-      detectarTema(d.background);
+    /* texto */
+    nome.innerText = p.nome || "";
+    descricao.innerText = p.descricao || "";
+
+    /* visual */
+    if(p.background){
+      document.body.style.backgroundImage = `url('${p.background}')`;
     }
 
-    if(d.logo){
-      logo.src = d.logo;
+    if(p.logo){
+      logo.src = p.logo;
     }
+
+    /* 🔥 TEMA PELO SHEETS */
+    if(p.glass_effect === "claro"){
+      aplicarTemaClaro();
+    }else{
+      aplicarTemaEscuro();
+    }
+
   });
 
   /* arquivos */
@@ -198,46 +204,23 @@ function carregar(user){
   });
 }
 
-/* 🔥 DETECTA TEMA */
-function detectarTema(url){
-  const img = new Image();
-  img.crossOrigin="Anonymous";
-
-  img.onload = ()=>{
-    const c=document.createElement("canvas");
-    const ctx=c.getContext("2d");
-    c.width=50; c.height=50;
-    ctx.drawImage(img,0,0,50,50);
-
-    const data=ctx.getImageData(0,0,50,50).data;
-    let total=0;
-
-    for(let i=0;i<data.length;i+=4){
-      total += (data[i]+data[i+1]+data[i+2])/3;
-    }
-
-    const media = total/(data.length/4);
-
-    if(media>180) temaClaro();
-    else temaEscuro();
-  };
-
-  img.src=url;
-}
-
 /* TEMAS */
-function temaClaro(){
+function aplicarTemaClaro(){
   document.body.style.color="#111";
+
   document.querySelector(".container").style.background="rgba(255,255,255,0.6)";
+
   document.querySelectorAll("a").forEach(a=>{
     a.style.background="rgba(0,0,0,0.1)";
     a.style.color="#111";
   });
 }
 
-function temaEscuro(){
+function aplicarTemaEscuro(){
   document.body.style.color="white";
+
   document.querySelector(".container").style.background="rgba(0,0,0,0.4)";
+
   document.querySelectorAll("a").forEach(a=>{
     a.style.background="rgba(255,255,255,0.1)";
     a.style.color="white";
@@ -252,9 +235,9 @@ window.onload = function(){
   chamarAPI({action:"getAcessoTag", projeto}, res=>{
 
     if(res.acesso_tag === "livre"){
-      iniciarSistema(); // 🔥 entra direto
+      iniciarSistema(); // 🔥 direto sem login
     }else{
-      loginBox.style.display="block";
+      document.getElementById("loginBox").style.display="block";
     }
 
   });
