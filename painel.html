@@ -1,227 +1,73 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<title>NexTag Admin</title>
-
-<link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<style>
-body{
-  margin:0;
-  font-family: 'Segoe UI', sans-serif;
-  background:url("fundo6.jpg") center/cover no-repeat fixed;
-  color:#fff;
-}
-
-/* HEADER */
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:15px 30px;
-  background:rgba(0,0,0,0.7);
-  backdrop-filter:blur(10px);
-}
-
-.logo{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-.logo img{ height:40px; }
-
-.top-actions{
-  display:flex;
-  gap:15px;
-  align-items:center;
-}
-
-/* SIDEBAR */
-.sidebar{
-  position:fixed;
-  left:0;
-  top:70px;
-  width:220px;
-  bottom:0;
-  background:rgba(0,0,0,0.6);
-  padding:20px;
-}
-
-/* MAIN */
-.main{
-  margin-left:240px;
-  padding:20px;
-}
-
-/* CARDS */
-.card{
-  background:rgba(0,0,0,0.5);
-  padding:20px;
-  border-radius:12px;
-  margin-bottom:20px;
-}
-
-/* LISTA */
-.file{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:10px;
-  border-bottom:1px solid rgba(255,255,255,0.1);
-}
-
-.file i{ margin-right:10px; }
-
-.actions button{
-  margin-left:5px;
-  background:#222;
-  border:none;
-  color:#fff;
-  padding:6px 10px;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-.actions button:hover{ background:#555; }
-
-/* ICON PICKER */
-.icon-picker i{
-  font-size:22px;
-  margin:8px;
-  cursor:pointer;
-}
-
-.icon-picker i.selected{
-  color:#00d4ff;
-}
-
-/* MODAL */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.8);
-  display:none;
-  align-items:center;
-  justify-content:center;
-}
-
-.modal-box{
-  background:#111;
-  padding:20px;
-  border-radius:12px;
-  width:350px;
-}
-
-/* FOOTER */
-.footer{
-  text-align:center;
-  padding:15px;
-  background:rgba(0,0,0,0.7);
-  position:fixed;
-  bottom:0;
-  width:100%;
-}
-</style>
-</head>
-
-<body>
-
-<!-- HEADER -->
-<div class="header">
-  <div class="logo">
-    <img src="nextag_logo.png">
-    <div>Admin NexTag</div>
-  </div>
-
-  <div class="top-actions">
-    <span id="userNome"></span>
-    <button onclick="toggleTema()">🌙</button>
-    <button onclick="logout()">✖</button>
-  </div>
-</div>
-
-<!-- SIDEBAR -->
-<div class="sidebar">
-  <button onclick="abrirHistorico()">📜 Histórico</button>
-  <hr>
-  <select id="ordem" onchange="ordenar()">
-    <option value="az">A-Z</option>
-    <option value="za">Z-A</option>
-  </select>
-</div>
-
-<!-- MAIN -->
-<div class="main">
-
-<div class="card">
-<h2>Bem vindo ao portal NexTag</h2>
-<p>Gerencie arquivos e projetos com facilidade.</p>
-
-<select id="projetoSelect" onchange="selecionarProjeto()"></select>
-</div>
-
-<div class="card" id="listaArquivos"></div>
-
-</div>
-
-<!-- MODAL EDIT -->
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <h3>Editar Arquivo</h3>
-
-    <input id="nomeArquivo" placeholder="Nome"><br><br>
-    <input id="fileLink" placeholder="Link"><br><br>
-
-    <p>Selecione o ícone:</p>
-    <div class="icon-picker">
-      <i class="fas fa-file" onclick="selecionarIcone(this)"></i>
-      <i class="fas fa-file-pdf" onclick="selecionarIcone(this)"></i>
-      <i class="fas fa-image" onclick="selecionarIcone(this)"></i>
-      <i class="fas fa-folder" onclick="selecionarIcone(this)"></i>
-      <i class="fas fa-shield-halved" onclick="selecionarIcone(this)"></i>
-      <i class="fas fa-address-book" onclick="selecionarIcone(this)"></i>
-      <i class="fas fa-book" onclick="selecionarIcone(this)"></i>
-      <i class="fas fa-calendar" onclick="selecionarIcone(this)"></i>
-      <i class="fas fa-compass-drafting" onclick="selecionarIcone(this)"></i>
-    </div>
-
-    <br>
-    <button onclick="salvar()">Salvar</button>
-    <button onclick="fecharModal()">Fechar</button>
-  </div>
-</div>
-
-<!-- FOOTER -->
-<div class="footer">
-Suporte: contato@nextag.com.br
-</div>
-
 <script>
+const API_URL = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
+
 let arquivos = [];
 let projetoAtual = null;
 let iconeSelecionado = "fas fa-file";
+let projetos = [];
 
-function selecionarIcone(el){
-  document.querySelectorAll(".icon-picker i").forEach(i=>i.classList.remove("selected"));
-  el.classList.add("selected");
-  iconeSelecionado = el.className;
+/* API */
+function chamarAPI(params, callback){
+  const cb = "cb_" + Date.now();
+  const script = document.createElement("script");
+
+  window[cb] = function(data){
+    callback(data);
+    delete window[cb];
+    script.remove();
+  };
+
+  script.src = API_URL + "?" + new URLSearchParams(params) + "&callback=" + cb;
+  document.body.appendChild(script);
 }
 
+/* INIT */
+window.onload = function(){
+
+  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+
+  document.getElementById("userNome").innerText = userData.usuario || "Usuário";
+
+  carregarProjetos();
+}
+
+/* PROJETOS (SIDEBAR 🔥) */
+function carregarProjetos(){
+  chamarAPI({action:"getProjetos"}, res=>{
+
+    projetos = res.projetos;
+
+    const select = document.getElementById("projetoSelect");
+    select.innerHTML = "<option>Selecione o projeto</option>";
+
+    projetos.forEach(p=>{
+      const opt = document.createElement("option");
+      opt.value = p.id_projeto;
+      opt.textContent = p.nome;
+      select.appendChild(opt);
+    });
+
+  });
+}
+
+/* SELECIONAR PROJETO */
 function selecionarProjeto(){
   projetoAtual = document.getElementById("projetoSelect").value;
+
+  if(!projetoAtual) return;
+
   carregarArquivos();
 }
 
+/* ARQUIVOS */
 function carregarArquivos(){
   chamarAPI({action:"getArquivos", projeto:projetoAtual}, res=>{
-    arquivos = res.arquivos;
+    arquivos = res.arquivos || [];
     render();
   });
 }
 
+/* RENDER */
 function render(){
   const lista = document.getElementById("listaArquivos");
   lista.innerHTML="";
@@ -229,42 +75,121 @@ function render(){
   arquivos.forEach(a=>{
     lista.innerHTML += `
       <div class="file">
-        <div><i class="${a.icone}"></i> ${a.nome}</div>
-        <div class="actions">
-          <button onclick="window.open('${a.link}')">👁</button>
-          <button onclick="editar('${a.nome}','${a.link}','${a.icone}')">✏</button>
-          <button onclick="excluir('${a.nome}')">🗑</button>
+        <div>
+          <i class="${a.icone}"></i> ${a.nome}
         </div>
-      </div>`;
+
+        <div class="actions">
+          <button onclick="window.open('${a.link}')">⬇️</button>
+          <button onclick="editar('${a.nome}','${a.link}','${a.icone}')">✏️</button>
+          <button onclick="excluir('${a.nome}')">🗑️</button>
+        </div>
+      </div>
+    `;
   });
 }
 
+/* ORDENAÇÃO */
 function ordenar(){
   const tipo = document.getElementById("ordem").value;
 
   arquivos.sort((a,b)=>{
     if(tipo==="az") return a.nome.localeCompare(b.nome);
-    return b.nome.localeCompare(a.nome);
+    if(tipo==="za") return b.nome.localeCompare(a.nome);
+    return 0;
   });
 
   render();
 }
 
+/* EDITAR */
 function editar(nome,link,icone){
   document.getElementById("modal").style.display="flex";
+
   nomeArquivo.value = nome;
   fileLink.value = link;
   iconeSelecionado = icone;
+
+  document.querySelectorAll(".icon-picker i").forEach(i=>{
+    i.classList.remove("selected");
+    if(i.className === icone) i.classList.add("selected");
+  });
 }
 
+/* SALVAR */
+function salvar(){
+  chamarAPI({
+    action:"addArquivo",
+    projeto:projetoAtual,
+    nome:nomeArquivo.value,
+    link:fileLink.value,
+    icone:iconeSelecionado
+  }, ()=>{
+    fecharModal();
+    carregarArquivos();
+  });
+}
+
+/* EXCLUIR */
+function excluir(nome){
+  if(confirm("Excluir arquivo?")){
+    chamarAPI({
+      action:"deleteArquivo",
+      projeto:projetoAtual,
+      nome
+    }, carregarArquivos);
+  }
+}
+
+/* ICON */
+function selecionarIcone(el){
+  document.querySelectorAll(".icon-picker i").forEach(i=>i.classList.remove("selected"));
+  el.classList.add("selected");
+  iconeSelecionado = el.className;
+}
+
+/* MODAL */
 function fecharModal(){
   document.getElementById("modal").style.display="none";
 }
 
+/* HISTÓRICO 🔥 AGORA FUNCIONA */
+function abrirHistorico(){
+
+  if(!projetoAtual){
+    alert("Selecione um projeto primeiro");
+    return;
+  }
+
+  chamarAPI({action:"getHistorico", projeto:projetoAtual}, res=>{
+
+    let texto = "Histórico:\n\n";
+
+    (res.historico || []).forEach(h=>{
+      const data = new Date().toLocaleString();
+      texto += `${data} - ${h.nome} - ${h.acao}\n`;
+    });
+
+    alert(texto);
+  });
+}
+
+/* TEMA 🌙 */
 function toggleTema(){
   document.body.classList.toggle("light");
+
+  if(document.body.classList.contains("light")){
+    document.body.style.background = "#f5f5f5";
+    document.body.style.color = "#111";
+  }else{
+    document.body.style.background = "url('fundo6.jpg') center/cover no-repeat fixed";
+    document.body.style.color = "#fff";
+  }
+}
+
+/* LOGOUT */
+function logout(){
+  localStorage.clear();
+  location.reload();
 }
 </script>
-
-</body>
-</html>
