@@ -1,46 +1,215 @@
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
 
-/* 🔥 FUNÇÃO GLOBAL QUE O BACKEND CHAMA */
-function teste(res){
+let arquivos = [];
+let projetoAtual = null;
+let iconeSelecionado = "fas fa-file";
+let editandoNome = null;
+let usuarioLogado = null;
 
-  console.log("🔎 RESPOSTA API:", res);
+/* 🔐 PROTEÇÃO LOGIN */
+document.addEventListener("DOMContentLoaded", () => {
 
-  if(res && res.ok){
+  const userData = JSON.parse(localStorage.getItem("userData") || "null");
 
-    localStorage.setItem("userData", JSON.stringify(res));
-
-    console.log("✅ Login OK");
-    window.location.href = "painel.html";
-
-  }else{
-
-    console.warn("❌ Login falhou:", res);
-    alert(res?.erro || "Login inválido");
-
-  }
-}
-
-/* LOGIN */
-function login(){
-
-  const usuario = document.getElementById("usuario").value;
-  const senha = document.getElementById("senha").value;
-
-  if(!usuario || !senha){
-    alert("Preencha usuário e senha");
+  if(!userData || !userData.usuario){
+    alert("Sessão expirada");
+    window.location.href = "index.html";
     return;
   }
 
+  usuarioLogado = userData.usuario;
+
+  const elUser = document.getElementById("userNome");
+  if(elUser) elUser.innerText = usuarioLogado;
+
+  carregarProjetos();
+});
+
+/* API JSONP */
+function chamarAPI(params, callback){
+
+  const cb = "cb_" + Date.now();
+
+  window[cb] = function(data){
+    callback(data);
+    delete window[cb];
+  };
+
   const script = document.createElement("script");
-
-  script.src = API_URL + "?" + new URLSearchParams({
-    action:"login",
-    usuario,
-    senha,
-    tipo:"painel"
-  });
-
+  script.src = API_URL + "?" + new URLSearchParams({...params, callback:cb});
   document.body.appendChild(script);
+}
+
+/* PROJETOS */
+function carregarProjetos(){
+
+  chamarAPI({action:"getProjetos"}, res=>{
+
+    const select = document.getElementById("projetoSelect");
+    if(!select) return;
+
+    select.innerHTML = "<option value=''>Selecione</option>";
+
+    res.projetos.forEach(p=>{
+      select.innerHTML += `<option value="${p.id_projeto}">${p.nome}</option>`;
+    });
+
+  });
+}
+
+/* SELECIONAR */
+function selecionarProjeto(){
+
+  projetoAtual = document.getElementById("projetoSelect").value;
+  if(!projetoAtual) return;
+
+  carregarArquivos();
+}
+
+/* ARQUIVOS */
+function carregarArquivos(){
+
+  chamarAPI({action:"getArquivos", projeto:projetoAtual}, res=>{
+    arquivos = res.arquivos || [];
+    ordenar();
+  });
+}
+
+/* RENDER */
+function render(){
+
+  const lista = document.getElementById("listaArquivos");
+  if(!lista) return;
+
+  lista.innerHTML = "";
+
+  arquivos.forEach(a=>{
+
+    lista.innerHTML += `
+    <div class="file">
+      <div><i class="${a.icone}"></i> ${a.nome}</div>
+
+      <div class="actions">
+
+        <button onclick="preview('${a.link}')" title="Visualizar">
+          <i class="fas fa-eye"></i>
+        </button>
+
+        <button onclick="editar('${a.nome}','${a.link}','${a.icone}')" title="Editar">
+          <i class="fas fa-pen"></i>
+        </button>
+
+        <button onclick="excluir('${a.nome}')" title="Excluir">
+          <i class="fas fa-trash"></i>
+        </button>
+
+      </div>
+    </div>`;
+  });
+}
+
+/* ORDENAÇÃO */
+function ordenar(){
+
+  const tipo = document.getElementById("ordem")?.value;
+
+  if(tipo === "az"){
+    arquivos.sort((a,b)=>a.nome.localeCompare(b.nome));
+  }
+
+  if(tipo === "za"){
+    arquivos.sort((a,b)=>b.nome.localeCompare(a.nome));
+  }
+
+  render();
+}
+
+/* MODAL */
+function abrirModal(){
+  document.getElementById("modal").style.display="flex";
+
+  nomeArquivo.value="";
+  fileLink.value="";
+  iconeSelecionado="fas fa-file";
+  editandoNome=null;
+}
+
+/* EDITAR */
+function editar(nome,link,icone){
+
+  abrirModal();
+
+  nomeArquivo.value=nome;
+  fileLink.value=link;
+  iconeSelecionado=icone;
+  editandoNome=nome;
+}
+
+/* SALVAR */
+function salvar(){
+
+  chamarAPI({
+    action:"addArquivo",
+    projeto:projetoAtual,
+    nome:nomeArquivo.value,
+    link:fileLink.value,
+    icone:iconeSelecionado,
+    antigo:editandoNome,
+    usuario:usuarioLogado
+  }, ()=>{
+    fecharModal();
+    carregarArquivos();
+  });
+}
+
+/* EXCLUIR */
+function excluir(nome){
+
+  if(confirm("Excluir arquivo?")){
+    chamarAPI({
+      action:"deleteArquivo",
+      projeto:projetoAtual,
+      nome,
+      usuario:usuarioLogado
+    }, carregarArquivos);
+  }
+}
+
+/* ICONES */
+function selecionarIcone(el){
+  document.querySelectorAll(".icon-picker i").forEach(i=>i.classList.remove("selected"));
+  el.classList.add("selected");
+  iconeSelecionado = el.className;
+}
+
+/* PREVIEW TAG */
+function preview(link){
+
+  const modal = document.getElementById("previewModal");
+
+  modal.innerHTML = `
+    <div class="preview-box">
+      <span onclick="fecharPreview()">✖</span>
+      <iframe src="${link}"></iframe>
+    </div>
+  `;
+
+  modal.style.display="flex";
+}
+
+function fecharPreview(){
+  document.getElementById("previewModal").style.display="none";
+}
+
+/* FECHAR MODAL */
+function fecharModal(){
+  document.getElementById("modal").style.display="none";
+}
+
+/* LOGOUT SEGURO */
+function logout(){
+  localStorage.removeItem("userData");
+  window.location.href = "index.html";
 }
 </script>
