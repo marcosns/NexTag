@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexTag — Definir senha</title>
+<link rel="icon" href="https://raw.githubusercontent.com/marcosns/NexTag/main/favicon.ico">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f0f2f5;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Card centralizado ── */
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.logo-wrap { margin-bottom: 24px; }
+.logo-wrap img { height: 44px; }
+
+/* ── Estados da página ── */
+/* Cada estado é exibido um de cada vez */
+#estadoCarregando,
+#estadoFormulario,
+#estadoSucesso,
+#estadoErro { display: none; }
+
+/* ── Ícones grandes de status ── */
+.icone-status {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+}
+p {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* ── Campos ── */
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  text-align: left;
+  margin-bottom: 4px;
+}
+input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color .2s;
+}
+input:focus { border-color: #2563eb; }
+
+/* ── Dica de força de senha ── */
+.forca-wrap { margin: -4px 0 12px; text-align: left; }
+.forca-barra {
+  height: 4px;
+  border-radius: 2px;
+  background: #e5e7eb;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+.forca-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 2px;
+  transition: width .3s, background .3s;
+}
+.forca-texto { font-size: 12px; color: #6b7280; }
+
+/* ── Botão ── */
+.btn {
+  width: 100%;
+  padding: 11px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background .2s;
+}
+.btn:hover { background: #1d4ed8; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-secundario {
+  background: #f9fafb;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  margin-top: 10px;
+}
+.btn-secundario:hover { background: #f3f4f6; }
+
+/* ── Spinner ── */
+.spinner {
+  display: none;
+  width: 16px; height: 16px;
+  border: 2px solid #ffffff55;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Erros e alertas ── */
+.erro {
+  color: #dc2626;
+  font-size: 13px;
+  margin-bottom: 10px;
+  display: none;
+  text-align: left;
+}
+
+/* ── Cores de status ── */
+.cor-sucesso { color: #16a34a; }
+.cor-erro    { color: #dc2626; }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Logo -->
+  <div class="logo-wrap">
+    <img src="nextag_logo.png" alt="NexTag" onerror="this.style.display='none'">
+  </div>
+
+  <!-- ── Estado: verificando link ── -->
+  <div id="estadoCarregando">
+    <p>Verificando seu link…</p>
+  </div>
+
+  <!-- ── Estado: formulário de definição de senha ── -->
+  <div id="estadoFormulario">
+    <h2 id="tituloFormulario">Definir senha</h2>
+    <p id="subtituloFormulario">Escolha uma senha segura para acessar o painel NexTag.</p>
+
+    <label for="novaSenha">Nova senha</label>
+    <input id="novaSenha" type="password" placeholder="Mínimo 6 caracteres"
+           oninput="avaliarForca(this.value)"
+           onkeydown="if(event.key==='Enter') confirmarSenha()">
+
+    <!-- Indicador visual de força da senha -->
+    <div class="forca-wrap">
+      <div class="forca-barra"><div class="forca-fill" id="forcaFill"></div></div>
+      <span class="forca-texto" id="forcaTexto"></span>
+    </div>
+
+    <label for="confirmarSenha">Confirmar senha</label>
+    <input id="confirmarSenha" type="password" placeholder="Repita a senha"
+           onkeydown="if(event.key==='Enter') confirmarSenha()">
+
+    <p id="erroFormulario" class="erro"></p>
+
+    <button class="btn" id="btnDefinir" onclick="confirmarSenha()">
+      <span id="labelBtnDefinir">Salvar senha</span>
+      <span class="spinner" id="spinnerDefinir"></span>
+    </button>
+  </div>
+
+  <!-- ── Estado: sucesso ── -->
+  <div id="estadoSucesso">
+    <div class="icone-status">✅</div>
+    <h2 class="cor-sucesso">Senha definida!</h2>
+    <p>Sua senha foi salva com sucesso. Você já pode acessar o painel.</p>
+    <button class="btn" onclick="window.location.href='index.html'">
+      Ir para o login
+    </button>
+  </div>
+
+  <!-- ── Estado: erro (link expirado ou inválido) ── -->
+  <div id="estadoErro">
+    <div class="icone-status">❌</div>
+    <h2 class="cor-erro">Link inválido</h2>
+    <p id="mensagemErro">Este link expirou ou já foi utilizado.</p>
+    <button class="btn btn-secundario" onclick="window.location.href='index.html'">
+      Voltar para o login
+    </button>
+  </div>
+
+</div>
+
+<script>
+// ── URL do backend Apps Script ──
+const API = "https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
+
+// ── Parâmetros lidos da URL do link de email ──
+const params  = new URLSearchParams(window.location.search);
+const CODIGO  = params.get("codigo");
+const USUARIO = params.get("usuario");
+const TIPO    = params.get("tipo"); // "convite" ou "reset"
+
+// ── Chama a API via JSONP ──
+function api(p, cb, onErro) {
+  const s = document.createElement("script");
+  const cbName = "cb_" + Date.now();
+  const timer = setTimeout(() => {
+    delete window[cbName]; s.remove();
+    if (onErro) onErro("Tempo esgotado. Tente novamente.");
+  }, 12000);
+  window[cbName] = res => { clearTimeout(timer); delete window[cbName]; s.remove(); cb(res); };
+  s.src = API + "?" + new URLSearchParams(p) + "&callback=" + cbName;
+  document.body.appendChild(s);
+}
+
+// ── Exibe apenas um estado por vez ──
+function mostrar(id) {
+  ["estadoCarregando","estadoFormulario","estadoSucesso","estadoErro"].forEach(s => {
+    document.getElementById(s).style.display = s === id ? "block" : "none";
+  });
+}
+
+// ── Avalia força da senha e atualiza barra visual ──
+function avaliarForca(senha) {
+  const fill  = document.getElementById("forcaFill");
+  const texto = document.getElementById("forcaTexto");
+  let pontos = 0;
+  if (senha.length >= 6)  pontos++;
+  if (senha.length >= 10) pontos++;
+  if (/[A-Z]/.test(senha)) pontos++;
+  if (/[0-9]/.test(senha)) pontos++;
+  if (/[^A-Za-z0-9]/.test(senha)) pontos++;
+
+  const niveis = [
+    { pct: "0%",   cor: "#e5e7eb", txt: "" },
+    { pct: "25%",  cor: "#dc2626", txt: "Fraca" },
+    { pct: "50%",  cor: "#f59e0b", txt: "Média" },
+    { pct: "75%",  cor: "#2563eb", txt: "Boa" },
+    { pct: "100%", cor: "#16a34a", txt: "Forte" },
+  ];
+  const n = niveis[Math.min(pontos, 4)];
+  fill.style.width      = n.pct;
+  fill.style.background = n.cor;
+  texto.textContent     = senha.length > 0 ? `Força: ${n.txt}` : "";
+  texto.style.color     = n.cor;
+}
+
+// ── Valida e envia nova senha ──
+function confirmarSenha() {
+  const nova      = document.getElementById("novaSenha").value;
+  const confirmar = document.getElementById("confirmarSenha").value;
+  const erro      = document.getElementById("erroFormulario");
+  const btn       = document.getElementById("btnDefinir");
+  const spinner   = document.getElementById("spinnerDefinir");
+  const label     = document.getElementById("labelBtnDefinir");
+
+  erro.style.display = "none";
+
+  if (nova.length < 6) {
+    erro.textContent   = "A senha deve ter pelo menos 6 caracteres.";
+    erro.style.display = "block";
+    return;
+  }
+  if (nova !== confirmar) {
+    erro.textContent   = "As senhas não coincidem.";
+    erro.style.display = "block";
+    return;
+  }
+
+  btn.disabled          = true;
+  spinner.style.display = "inline-block";
+  label.textContent     = "Salvando…";
+
+  // Usa "definirSenha" para convite e "redefinirSenha" para reset
+  const action = TIPO === "convite" ? "definirSenha" : "redefinirSenha";
+
+  api({ action, codigo: CODIGO, usuario: USUARIO, senha: nova }, res => {
+    btn.disabled          = false;
+    spinner.style.display = "none";
+    label.textContent     = "Salvar senha";
+
+    if (res.ok) {
+      mostrar("estadoSucesso");
+    } else {
+      erro.textContent   = res.erro || "Erro ao salvar senha.";
+      erro.style.display = "block";
+    }
+  }, msg => {
+    btn.disabled          = false;
+    spinner.style.display = "none";
+    label.textContent     = "Salvar senha";
+    erro.textContent      = msg;
+    erro.style.display    = "block";
+  });
+}
+
+// ─────────────────────────────────────────────
+//  INICIALIZAÇÃO:
+//  1. Verifica se link tem os parâmetros necessários
+//  2. Chama o backend para validar o código
+//  3. Exibe formulário ou mensagem de erro
+// ─────────────────────────────────────────────
+window.onload = () => {
+  // Parâmetros ausentes na URL
+  if (!CODIGO || !USUARIO || !TIPO) {
+    document.getElementById("mensagemErro").textContent =
+      "Link inválido. Verifique se copiou o endereço completo do email.";
+    mostrar("estadoErro");
+    return;
+  }
+
+  mostrar("estadoCarregando");
+
+  // Escolhe a ação de verificação conforme o tipo
+  const actionVerificar = TIPO === "convite" ? "verificarConvite" : "verificarReset";
+
+  api({ action: actionVerificar, codigo: CODIGO, usuario: USUARIO }, res => {
+    if (res.ok) {
+      // Ajusta título conforme tipo de acesso
+      if (TIPO === "convite") {
+        document.getElementById("tituloFormulario").textContent    = "Bem-vindo ao NexTag!";
+        document.getElementById("subtituloFormulario").textContent = `Olá, ${USUARIO}! Crie sua senha de acesso ao painel.`;
+      } else {
+        document.getElementById("tituloFormulario").textContent    = "Redefinir senha";
+        document.getElementById("subtituloFormulario").textContent = "Escolha uma nova senha para sua conta.";
+      }
+      mostrar("estadoFormulario");
+    } else {
+      document.getElementById("mensagemErro").textContent =
+        res.erro || "Link inválido ou expirado.";
+      mostrar("estadoErro");
+    }
+  }, () => {
+    document.getElementById("mensagemErro").textContent =
+      "Erro de conexão. Tente abrir o link novamente.";
+    mostrar("estadoErro");
+  });
+};
+</script>
+</body>
+</html>
