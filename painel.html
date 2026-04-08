@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexTag — Painel</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* ════════════════════════════════════════
+   RESET & VARIÁVEIS
+════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #F8FAFC;
+  --surface:  #FFFFFF;
+  --border:   #E2E8F0;
+  --accent:   #2563EB;
+  --accent-h: #1D4ED8;
+  --danger:   #EF4444;
+  --success:  #22C55E;
+  --text:     #0F172A;
+  --muted:    #64748B;
+  --sidebar:  #0F172A;
+  --radius:   10px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* ════════════════════════════════════════
+   LAYOUT: sidebar + main
+════════════════════════════════════════ */
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+/* ── Sidebar escura ── */
+.sidebar {
+  background: var(--sidebar);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-top {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid #1E293B;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.brand img { height: 32px; }
+.brand-text { font-size: 15px; font-weight: 700; color: #fff; }
+
+/* Seletor de projeto na sidebar */
+.proj-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #475569;
+  margin-bottom: 6px;
+}
+.proj-select {
+  width: 100%;
+  background: #1E293B;
+  border: 1px solid #334155;
+  border-radius: var(--radius);
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+.proj-select:focus { border-color: var(--accent); }
+
+/* Info do usuário na sidebar */
+.sidebar-user {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid #1E293B;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-avatar {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.user-name { font-size: 13px; color: #CBD5E1; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-logout {
+  background: none; border: none; color: #475569;
+  cursor: pointer; padding: 4px; border-radius: 6px;
+  transition: color .2s;
+}
+.btn-logout:hover { color: #EF4444; }
+
+/* ── Main content ── */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Topbar */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.topbar-title h1 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.topbar-title p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ── Área de conteúdo ── */
+.content { padding: 24px 28px; flex: 1; }
+
+/* ════════════════════════════════════════
+   BOTÕES
+════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border: none; border-radius: var(--radius);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .15s;
+}
+.btn:hover   { opacity: .88; }
+.btn:active  { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary  { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-h); opacity: 1; }
+.btn-ghost    { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg); opacity: 1; }
+.btn-danger-ghost { background: transparent; color: var(--danger); border: 1px solid #FECACA; }
+.btn-danger-ghost:hover { background: #FEF2F2; opacity: 1; }
+.btn-preview  { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
+.btn-preview:hover { background: #DCFCE7; opacity: 1; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* ════════════════════════════════════════
+   GRID DE ARQUIVOS
+════════════════════════════════════════ */
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.file-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: box-shadow .15s, border-color .15s;
+}
+.file-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.06); border-color: #CBD5E1; }
+
+.file-icon {
+  width: 40px; height: 40px;
+  background: #EFF6FF;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.file-info { flex: 1; min-width: 0; }
+.file-name {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.file-type { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.file-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+.icon-btn {
+  width: 30px; height: 30px;
+  background: none; border: none;
+  border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 13px;
+  transition: all .15s;
+}
+.icon-btn:hover { background: var(--bg); color: var(--text); }
+.icon-btn.del:hover { background: #FEF2F2; color: var(--danger); }
+
+/* Estado vazio */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+.empty-state i { font-size: 40px; margin-bottom: 12px; opacity: .3; display: block; }
+.empty-state p { font-size: 14px; }
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ════════════════════════════════════════
+   MODAL
+════════════════════════════════════════ */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,.5);
+  display: none; align-items: center; justify-content: center;
+  z-index: 100; backdrop-filter: blur(2px);
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  width: 520px; max-width: 95vw;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.15);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.modal-header h3 { font-size: 16px; font-weight: 700; }
+.modal-close {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 18px; padding: 4px; border-radius: 6px;
+  transition: color .15s;
+}
+.modal-close:hover { color: var(--text); }
+
+.field-label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--muted); margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+input, select, textarea {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text);
+  font-size: 13px; outline: none; transition: border-color .2s;
+  margin-bottom: 14px;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+.field-erro { font-size: 12px; color: var(--danger); margin: -10px 0 10px; display: none; }
+
+.modal-footer {
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
+}
+
+/* ════════════════════════════════════════
+   SELETOR DE ÍCONES (grade visual)
+════════════════════════════════════════ */
+.icon-picker-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; display: block; }
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.icon-opt {
+  aspect-ratio: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px; cursor: pointer;
+  font-size: 18px; color: var(--muted);
+  transition: all .15s;
+  padding: 8px 4px;
+  background: var(--bg);
+}
+.icon-opt:hover { border-color: var(--accent); color: var(--accent); background: #EFF6FF; }
+.icon-opt.selected { border-color: var(--accent); color: var(--accent); background: #EFF6FF; box-shadow: 0 0 0 2px #BFDBFE; }
+.icon-opt span { font-size: 9px; color: var(--muted); text-align: center; line-height: 1.2; }
+/* esconde o campo select de ícone — usamos a grade visual */
+#icone { display: none; }
+
+/* ════════════════════════════════════════
+   VIEWER
+════════════════════════════════════════ */
+.viewer {
+  position: fixed; inset: 0;
+  background: #000; display: none;
+  flex-direction: column; z-index: 200;
+}
+.viewer.open { display: flex; }
+.viewer iframe { flex: 1; border: none; }
+.viewer-bar {
+  padding: 10px 16px; background: #111;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.viewer-bar span { color: #94A3B8; font-size: 13px; }
+
+/* ════════════════════════════════════════
+   SPINNER & TOAST
+════════════════════════════════════════ */
+.spin {
+  display: none; width: 14px; height: 14px;
+  border: 2px solid #ffffff44; border-top-color: #fff;
+  border-radius: 50%; animation: rot .6s linear infinite;
+}
+@keyframes rot { to { transform: rotate(360deg); } }
+
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: #0F172A; color: #fff;
+  padding: 12px 18px; border-radius: var(--radius);
+  font-size: 13px; font-weight: 500;
+  opacity: 0; transform: translateY(6px);
+  transition: all .25s; pointer-events: none; z-index: 300;
+  display: flex; align-items: center; gap: 8px;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+#toast.ok   i { color: var(--success); }
+#toast.err  i { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ════════════════════════════════════
+       SIDEBAR
+  ════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <!-- Logo e nome -->
+      <div class="brand">
+        <img src="nextag_logo.png" alt="NexTag" onerror="this.style.display='none'">
+        <span class="brand-text">NexTag</span>
+      </div>
+
+      <!-- Seletor de projeto -->
+      <p class="proj-label">Projeto ativo</p>
+      <select class="proj-select" id="projetoSelect"></select>
+    </div>
+
+    <!-- Info do usuário logado -->
+    <div class="sidebar-user">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <span class="user-name" id="userNome">—</span>
+      <button class="btn-logout" onclick="logout()" title="Sair">
+        <i class="fas fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ════════════════════════════════════
+       MAIN
+  ════════════════════════════════════ -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-title">
+        <h1 id="topbarProjeto">Carregando…</h1>
+        <p id="topbarCount">—</p>
+      </div>
+      <div class="topbar-actions">
+        <!-- Visualiza como cliente final (abre tag.html) -->
+        <button class="btn btn-preview" onclick="visualizarTag()">
+          <i class="fas fa-eye"></i> Ver como cliente
+        </button>
+        <!-- Adiciona novo arquivo -->
+        <button class="btn btn-primary" onclick="abrirModal()">
+          <i class="fas fa-plus"></i> Novo arquivo
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid de arquivos -->
+    <div class="content">
+      <div id="filesGrid" class="files-grid">
+        <!-- Skeletons de loading -->
+        <div class="file-card"><div class="skeleton" style="width:40px;height:40px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skeleton" style="height:14px;width:60%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:40%"></div></div></div>
+        <div class="file-card"><div class="skeleton" style="width:40px;height:40px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skeleton" style="height:14px;width:70%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:35%"></div></div></div>
+        <div class="file-card"><div class="skeleton" style="width:40px;height:40px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skeleton" style="height:14px;width:55%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:45%"></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: ADD / EDITAR ARQUIVO
+════════════════════════════════════════ -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitulo">Novo Arquivo</h3>
+      <button class="modal-close" onclick="fecharModal()"><i class="fas fa-xmark"></i></button>
+    </div>
+
+    <label class="field-label">Nome do arquivo *</label>
+    <input id="nome" placeholder="Ex: Manual do Proprietário">
+
+    <label class="field-label">Link do arquivo *</label>
+    <input id="link" placeholder="Cole o link do Google Drive, OneDrive ou URL pública">
+
+    <!-- Seletor visual de ícones -->
+    <span class="icon-picker-label">Ícone</span>
+    <div class="icon-grid" id="iconGrid"></div>
+    <!-- campo hidden que guarda o valor selecionado -->
+    <select id="icone"></select>
+
+    <p id="erroModal" class="field-erro"></p>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvar" onclick="salvar()">
+        <span id="labelSalvar">Salvar</span>
+        <span class="spin" id="spinSalvar"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     VIEWER FULLSCREEN
+════════════════════════════════════════ -->
+<div class="viewer" id="viewer">
+  <div class="viewer-bar">
+    <span id="viewerNome">Arquivo</span>
+    <div style="display:flex;gap:8px">
+      <a id="viewerDownload" target="_blank">
+        <button class="btn btn-ghost btn-sm"><i class="fas fa-download"></i> Download</button>
+      </a>
+      <button class="btn btn-ghost btn-sm" onclick="fecharViewer()"><i class="fas fa-xmark"></i> Fechar</button>
+    </div>
+  </div>
+  <iframe id="viewerFrame"></iframe>
+</div>
+
+<!-- Toast -->
+<div id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+
+<script>
+// ── URL do backend ──
+const API = "https://script.google.com/macros/s/AKfycby-goyk5onX2MtZEqoF1ggIRGmuN7yqN1guhltp8gKyJxBCmcf3sg7M5PMWHCr3SqPbNw/exec";
+
+// ── Catálogo de ícones disponíveis ──
+const ICONES = [
+  { cls: "fas fa-file",             label: "Arquivo"    },
+  { cls: "fas fa-file-pdf",         label: "PDF"        },
+  { cls: "fas fa-file-word",        label: "Word"       },
+  { cls: "fas fa-file-excel",       label: "Excel"      },
+  { cls: "fas fa-file-powerpoint",  label: "PPT"        },
+  { cls: "fas fa-image",            label: "Imagem"     },
+  { cls: "fas fa-video",            label: "Vídeo"      },
+  { cls: "fas fa-music",            label: "Áudio"      },
+  { cls: "fas fa-drafting-compass", label: "Planta"     },
+  { cls: "fas fa-ruler-combined",   label: "Projeto"    },
+  { cls: "fas fa-hard-hat",         label: "Obra"       },
+  { cls: "fas fa-house",            label: "Imóvel"     },
+  { cls: "fas fa-shield-alt",       label: "Garantia"   },
+  { cls: "fas fa-file-contract",    label: "Contrato"   },
+  { cls: "fas fa-address-book",     label: "Contatos"   },
+  { cls: "fas fa-book",             label: "Manual"     },
+  { cls: "fas fa-camera",           label: "Fotos"      },
+  { cls: "fas fa-map",              label: "Mapa"       },
+  { cls: "fas fa-chart-bar",        label: "Relatório"  },
+  { cls: "fas fa-link",             label: "Link"       },
+  { cls: "fas fa-folder",           label: "Pasta"      },
+  { cls: "fas fa-key",              label: "Acesso"     },
+  { cls: "fas fa-tools",            label: "Manual Téc" },
+  { cls: "fas fa-clipboard-list",   label: "Checklist"  },
+];
+
+// ── Estado ──
+let user         = null;
+let projetoAtual = null;
+let arquivos     = [];
+let iconeAtual   = ICONES[0].cls;
+
+// ── Proteção de rota ──
+function iniciar() {
+  const raw = localStorage.getItem("userData");
+  if (!raw) { window.location.href = "index.html"; return; }
+  user = JSON.parse(raw);
+  if (!user?.token) { forcarLogout(); return; }
+
+  // Popula UI com dados do usuário
+  document.getElementById("userNome").textContent = user.usuario;
+  document.getElementById("userAvatar").textContent = user.usuario.charAt(0).toUpperCase();
+
+  construirIconGrid();
+  carregarProjetos();
+}
+
+// ── Constrói a grade de ícones no modal ──
+function construirIconGrid() {
+  const grid = document.getElementById("iconGrid");
+  grid.innerHTML = "";
+  ICONES.forEach(ic => {
+    const div = document.createElement("div");
+    div.className = "icon-opt" + (ic.cls === ICONES[0].cls ? " selected" : "");
+    div.dataset.cls = ic.cls;
+    div.innerHTML = `<i class="${ic.cls}"></i><span>${ic.label}</span>`;
+    div.onclick = () => selecionarIcone(ic.cls);
+    grid.appendChild(div);
+  });
+}
+
+// ── Seleciona ícone na grade ──
+function selecionarIcone(cls) {
+  iconeAtual = cls;
+  document.getElementById("icone").value = cls;
+  document.querySelectorAll(".icon-opt").forEach(el => {
+    el.classList.toggle("selected", el.dataset.cls === cls);
+  });
+}
+
+// ── API JSONP com timeout ──
+function api(params, cb, onErro) {
+  const s = document.createElement("script");
+  const cbName = "cb_" + Date.now() + "_" + Math.floor(Math.random()*9999);
+  const timer = setTimeout(() => {
+    delete window[cbName]; s.remove();
+    if (onErro) onErro("Tempo esgotado.");
+  }, 12000);
+  window[cbName] = res => { clearTimeout(timer); delete window[cbName]; s.remove(); cb(res); };
+  s.src = API + "?" + new URLSearchParams(params) + "&callback=" + cbName;
+  document.body.appendChild(s);
+}
+
+// ── Escapa HTML contra XSS ──
+function esc(str) {
+  return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+// ── Toast ──
+function toast(msg, tipo = "ok") {
+  const el = document.getElementById("toast");
+  const ic = el.querySelector("i");
+  document.getElementById("toastMsg").textContent = msg;
+  el.className = "show " + tipo;
+  ic.className = tipo === "ok" ? "fas fa-check-circle" : "fas fa-exclamation-circle";
+  setTimeout(() => el.classList.remove("show"), 2800);
+}
+
+// ── Logout ──
+function logout() {
+  api({ action: "logout", token: user.token }, () => {});
+  forcarLogout();
+}
+function forcarLogout() {
+  localStorage.removeItem("userData");
+  window.location.href = "index.html";
+}
+
+// ── Abre tag.html em nova aba (visão do cliente) ──
+function visualizarTag() {
+  window.open("tag.html?id=" + projetoAtual, "_blank");
+}
+
+// ── Carrega projetos do usuário no seletor ──
+function carregarProjetos() {
+  const select = document.getElementById("projetoSelect");
+  select.innerHTML = "";
+  user.projetos.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p; opt.textContent = p;
+    select.appendChild(opt);
+  });
+  projetoAtual = user.projetos[0];
+  select.onchange = () => { projetoAtual = select.value; carregarArquivos(); };
+  carregarArquivos();
+}
+
+// ── Carrega e renderiza arquivos ──
+function carregarArquivos() {
+  document.getElementById("topbarProjeto").textContent = projetoAtual;
+  document.getElementById("topbarCount").textContent   = "Carregando…";
+
+  // Skeletons enquanto carrega
+  document.getElementById("filesGrid").innerHTML = `
+    <div class="file-card"><div class="skeleton" style="width:40px;height:40px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skeleton" style="height:14px;width:60%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:40%"></div></div></div>
+    <div class="file-card"><div class="skeleton" style="width:40px;height:40px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skeleton" style="height:14px;width:70%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:35%"></div></div></div>`;
+
+  api({ action: "getArquivos", projeto: projetoAtual }, res => {
+    arquivos = res.arquivos || [];
+    renderizarArquivos();
+  }, () => {
+    document.getElementById("filesGrid").innerHTML =
+      `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-wifi-slash"></i><p>Erro ao carregar. Verifique sua conexão.</p></div>`;
+  });
+}
+
+function renderizarArquivos() {
+  const grid = document.getElementById("filesGrid");
+  const n    = arquivos.length;
+
+  document.getElementById("topbarCount").textContent =
+    n === 0 ? "Nenhum arquivo" : `${n} arquivo${n > 1 ? "s" : ""}`;
+
+  if (n === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <i class="fas fa-folder-open"></i>
+      <p>Nenhum arquivo cadastrado.<br>Clique em <strong>+ Novo arquivo</strong> para começar.</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = "";
+  arquivos.forEach(a => {
+    const card = document.createElement("div");
+    card.className = "file-card";
+
+    // Rótulo amigável para o ícone
+    const meta = ICONES.find(i => i.cls === a.icone) || { label: "Arquivo" };
+
+    card.innerHTML = `
+      <div class="file-icon"><i class="${esc(a.icone || 'fas fa-file')}"></i></div>
+      <div class="file-info">
+        <div class="file-name" title="${esc(a.nome)}">${esc(a.nome)}</div>
+        <div class="file-type">${esc(meta.label)}</div>
+      </div>
+      <div class="file-actions">
+        <button class="icon-btn" onclick='abrirViewer("${esc(a.link)}","${esc(a.nome)}")' title="Visualizar"><i class="fas fa-eye"></i></button>
+        <button class="icon-btn" onclick='editar(${JSON.stringify({ nome: a.nome, link: a.link, icone: a.icone })})' title="Editar"><i class="fas fa-pen"></i></button>
+        <button class="icon-btn del" onclick='excluir("${esc(a.nome)}")' title="Excluir"><i class="fas fa-trash"></i></button>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── Modal ──
+function abrirModal() {
+  limpar();
+  document.getElementById("modalTitulo").textContent = "Novo Arquivo";
+  document.getElementById("modal").classList.add("open");
+}
+function fecharModal() {
+  document.getElementById("modal").classList.remove("open");
+}
+function limpar() {
+  document.getElementById("nome").value  = "";
+  document.getElementById("link").value  = "";
+  document.getElementById("erroModal").style.display = "none";
+  selecionarIcone(ICONES[0].cls);
+}
+
+// ── Editar: preenche modal ──
+function editar(a) {
+  limpar();
+  document.getElementById("modalTitulo").textContent = "Editar Arquivo";
+  document.getElementById("nome").value  = a.nome;
+  document.getElementById("link").value  = a.link;
+  selecionarIcone(a.icone || ICONES[0].cls);
+  document.getElementById("modal").classList.add("open");
+}
+
+// ── Salvar (novo ou edição) ──
+function salvar() {
+  const nome  = document.getElementById("nome").value.trim();
+  const link  = document.getElementById("link").value.trim();
+  const erro  = document.getElementById("erroModal");
+  const btn   = document.getElementById("btnSalvar");
+  const spin  = document.getElementById("spinSalvar");
+  const label = document.getElementById("labelSalvar");
+
+  erro.style.display = "none";
+  if (!nome) { erro.textContent = "Informe um nome."; erro.style.display = "block"; return; }
+  if (!link) { erro.textContent = "Informe o link.";  erro.style.display = "block"; return; }
+
+  btn.disabled = true; spin.style.display = "inline-block"; label.textContent = "Salvando…";
+
+  api({ action: "addArquivo", projeto: projetoAtual, nome, link, icone: iconeAtual, token: user.token }, res => {
+    btn.disabled = false; spin.style.display = "none"; label.textContent = "Salvar";
+    if (!res.ok) {
+      if (res.erro?.includes("expirada")) { forcarLogout(); return; }
+      erro.textContent = res.erro || "Erro ao salvar."; erro.style.display = "block"; return;
+    }
+    fecharModal();
+    toast("Arquivo salvo com sucesso!");
+    carregarArquivos();
+  }, msg => {
+    btn.disabled = false; spin.style.display = "none"; label.textContent = "Salvar";
+    erro.textContent = msg; erro.style.display = "block";
+  });
+}
+
+// ── Excluir ──
+function excluir(nome) {
+  if (!confirm(`Excluir "${nome}"? Esta ação não pode ser desfeita.`)) return;
+  api({ action: "deleteArquivo", projeto: projetoAtual, nome, token: user.token }, res => {
+    if (!res.ok) { toast(res.erro || "Erro ao excluir.", "err"); return; }
+    toast("Arquivo excluído.");
+    carregarArquivos();
+  });
+}
+
+// ── Viewer de arquivo ──
+function abrirViewer(link, nome) {
+  document.getElementById("viewerFrame").src   = link;
+  document.getElementById("viewerDownload").href = link;
+  document.getElementById("viewerNome").textContent = nome;
+  document.getElementById("viewer").classList.add("open");
+}
+function fecharViewer() {
+  document.getElementById("viewer").classList.remove("open");
+  document.getElementById("viewerFrame").src = "";
+}
+
+// ── Fecha modal clicando fora ──
+document.getElementById("modal").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal")) fecharModal();
+});
+
+// ── Init ──
+iniciar();
+</script>
+</body>
+</html>
