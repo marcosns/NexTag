@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Painel NexTag</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* ── Layout geral ── */
+body { margin:0; font-family:Arial; background:#f4f6f9; }
+
+/* ── Cabeçalho ── */
+.header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:15px 30px; background:#111827; color:#fff;
+}
+.logo-box { background:#fff; padding:5px 10px; border-radius:8px; }
+.logo { height:40px; }
+.user-area { display:flex; align-items:center; gap:10px; }
+
+/* ── Botões ── */
+button { cursor:pointer; border:none; padding:8px 12px; border-radius:6px; }
+.btn   { background:#2563eb; color:#fff; }
+.btn-danger { background:#dc2626; color:#fff; }
+button:disabled { opacity:0.5; cursor:not-allowed; }
+
+/* ── Conteúdo ── */
+.container { padding:20px; }
+.card {
+  background:#fff; padding:15px; border-radius:10px;
+  margin-bottom:10px; display:flex;
+  justify-content:space-between; align-items:center;
+}
+
+/* ── Mensagem de erro inline ── */
+.msg-erro {
+  color:#dc2626; font-size:13px;
+  margin:4px 0 0 0; display:none;
+}
+
+/* ── Spinner de loading ── */
+.spinner {
+  display:none; width:16px; height:16px;
+  border:2px solid #ffffff55;
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .6s linear infinite;
+  vertical-align:middle; margin-left:6px;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── Modal ── */
+.modal {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.6); display:none;
+  align-items:center; justify-content:center;
+}
+.modal-content { background:#fff; padding:20px; border-radius:10px; width:320px; }
+
+input, select { width:100%; padding:8px; margin:5px 0; box-sizing:border-box; }
+
+/* ── Viewer de arquivo ── */
+.viewer {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:#000; display:none; flex-direction:column;
+}
+.viewer iframe { flex:1; border:none; }
+.viewer .top {
+  padding:10px; background:#111; color:#fff;
+  display:flex; justify-content:space-between;
+}
+
+/* ── Toast de notificação ── */
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  background:#1f2937; color:#fff; padding:10px 20px;
+  border-radius:8px; font-size:14px;
+  opacity:0; transition:opacity .3s; pointer-events:none;
+}
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<!-- ── Cabeçalho com logo, seletor de projeto e ações ── -->
+<div class="header">
+  <div class="logo-box">
+    <img src="nextag_logo.png" class="logo">
+  </div>
+  <div class="user-area">
+    <select id="projetoSelect"></select>
+    <span id="userNome"></span>
+
+    <!-- Botão de visualizar tag pública -->
+    <button class="btn" onclick="abrirTag()" title="Ver como cliente final">
+      <i class="fas fa-eye"></i>
+    </button>
+
+    <!-- Botão de logout: invalida token no backend -->
+    <button class="btn-danger" onclick="logout()">
+      <i class="fas fa-right-from-bracket"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ── Área principal de arquivos ── -->
+<div class="container">
+  <button class="btn" onclick="abrirModal()">
+    <i class="fas fa-plus"></i> Novo Arquivo
+  </button>
+  <div id="lista" style="margin-top:12px;"></div>
+</div>
+
+<!-- ── Modal de criação / edição de arquivo ── -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modalTitulo">Arquivo</h3>
+
+    <input id="nome" placeholder="Nome do arquivo">
+    <input id="link" placeholder="Link (Google Drive, OneDrive, URL pública…)">
+
+    <!-- Seletor de ícone FontAwesome -->
+    <select id="icone">
+      <option value="fas fa-file">📄 Arquivo</option>
+      <option value="fas fa-file-pdf">📕 PDF</option>
+      <option value="fas fa-image">🖼 Imagem</option>
+      <option value="fas fa-video">🎥 Vídeo</option>
+      <option value="fas fa-file-word">📘 Word</option>
+      <option value="fas fa-drafting-compass">📐 Planta</option>
+      <option value="fas fa-shield-alt">🛡 Garantia</option>
+      <option value="fas fa-address-book">📒 Contatos</option>
+      <option value="fas fa-book">📗 Manual</option>
+    </select>
+
+    <!-- Mensagem de erro de validação inline -->
+    <p id="erroModal" class="msg-erro"></p>
+
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button class="btn" id="btnSalvar" onclick="salvar()">
+        Salvar <span class="spinner" id="spinnerSalvar"></span>
+      </button>
+      <button onclick="fecharModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Viewer fullscreen de arquivo (iframe) ── -->
+<div class="viewer" id="viewer">
+  <div class="top">
+    <button onclick="fecharViewer()">Fechar</button>
+    <a id="download" target="_blank">
+      <button>Download</button>
+    </a>
+  </div>
+  <iframe id="frame"></iframe>
+</div>
+
+<!-- ── Toast de notificação rápida ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── URL do Apps Script backend ──
+const API = "https://script.google.com/macros/s/AKfycby-goyk5onX2MtZEqoF1ggIRGmuN7yqN1guhltp8gKyJxBCmcf3sg7M5PMWHCr3SqPbNw/exe";
+
+// ── Dados de sessão salvos no localStorage ──
+// Armazena apenas: { usuario, token, projetos, tipo }
+// Nunca armazena senha
+let user = null;
+let projetoAtual = null;
+
+// ── Proteção de rota: redireciona se não logado ──
+function iniciar() {
+  const raw = localStorage.getItem("userData");
+  if (!raw) { window.location.href = "index.html"; return; }
+
+  user = JSON.parse(raw);
+
+  // Verifica se token ainda existe (sessão pode ter expirado pelo backend)
+  if (!user || !user.token) { forcarLogout(); return; }
+
+  document.getElementById("userNome").innerText = user.usuario;
+  carregarProjetos();
+}
+
+// ── Chama a API via JSONP com timeout de segurança ──
+// Se o backend não responder em 12s, remove o callback e mostra erro
+function api(params, cb, onErro) {
+  const s = document.createElement("script");
+  const cbName = "cb_" + Date.now() + "_" + Math.floor(Math.random()*9999);
+
+  // Timeout: evita vazamento de callbacks no window
+  const timer = setTimeout(() => {
+    delete window[cbName];
+    s.remove();
+    if (onErro) onErro("Tempo de resposta esgotado");
+  }, 12000);
+
+  window[cbName] = res => {
+    clearTimeout(timer);
+    delete window[cbName];
+    s.remove();
+    cb(res);
+  };
+
+  s.src = API + "?" + new URLSearchParams(params) + "&callback=" + cbName;
+  document.body.appendChild(s);
+}
+
+// ── Escapa HTML para evitar XSS ao inserir dados no DOM ──
+function esc(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// ── Exibe notificação rápida (toast) ──
+function toast(msg, ms = 2500) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), ms);
+}
+
+// ── Logout: avisa o backend para invalidar token ──
+function logout() {
+  api({ action: "logout", token: user.token }, () => {});
+  forcarLogout();
+}
+
+// ── Força logout local (limpa localStorage e redireciona) ──
+function forcarLogout() {
+  localStorage.removeItem("userData");
+  window.location.href = "index.html";
+}
+
+// ── Abre tag.html para o projeto atual (prévia do cliente final) ──
+function abrirTag() {
+  window.open("tag.html?projeto=" + projetoAtual, "_blank");
+}
+
+// ── Carrega seletor de projetos e inicia listagem ──
+function carregarProjetos() {
+  const select = document.getElementById("projetoSelect");
+  select.innerHTML = "";
+
+  user.projetos.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p;
+    select.appendChild(opt);
+  });
+
+  projetoAtual = user.projetos[0];
+
+  select.onchange = () => {
+    projetoAtual = select.value;
+    carregarArquivos();
+  };
+
+  carregarArquivos();
+}
+
+// ── Lista arquivos do projeto atual ──
+// Usa esc() para evitar XSS nos nomes vindos do Sheets
+function carregarArquivos() {
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "<p style='color:#888;font-size:13px'>Carregando...</p>";
+
+  api({ action: "getArquivos", projeto: projetoAtual }, res => {
+    lista.innerHTML = "";
+
+    if (!res.arquivos || res.arquivos.length === 0) {
+      lista.innerHTML = "<p style='color:#888;font-size:13px'>Nenhum arquivo cadastrado.</p>";
+      return;
+    }
+
+    res.arquivos.forEach(a => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      // Nome e ícone escapados contra XSS
+      card.innerHTML = `
+        <div>
+          <i class="${esc(a.icone)}"></i>
+          <span>${esc(a.nome)}</span>
+        </div>
+        <div>
+          <button onclick='visualizar("${esc(a.link)}")' title="Visualizar">
+            <i class="fas fa-eye"></i>
+          </button>
+          <button onclick='editarArquivo(${JSON.stringify({ nome: esc(a.nome), link: esc(a.link), icone: esc(a.icone) })})' title="Editar">
+            <i class="fas fa-pen"></i>
+          </button>
+          <button onclick='excluir("${esc(a.nome)}")' title="Excluir">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `;
+      lista.appendChild(card);
+    });
+  }, () => {
+    lista.innerHTML = "<p style='color:#dc2626'>Erro ao carregar arquivos. Tente novamente.</p>";
+  });
+}
+
+// ── Abre modal limpo para novo arquivo ──
+function abrirModal() {
+  limparFormulario();
+  document.getElementById("modalTitulo").textContent = "Novo Arquivo";
+  document.getElementById("modal").style.display = "flex";
+}
+
+// ── Fecha modal ──
+function fecharModal() {
+  document.getElementById("modal").style.display = "none";
+}
+
+// ── Limpa campos do formulário e mensagem de erro ──
+function limparFormulario() {
+  document.getElementById("nome").value  = "";
+  document.getElementById("link").value  = "";
+  document.getElementById("icone").value = "fas fa-file";
+  document.getElementById("erroModal").style.display = "none";
+  document.getElementById("erroModal").textContent = "";
+}
+
+// ── Preenche modal com dados para edição ──
+function editarArquivo(a) {
+  limparFormulario();
+  document.getElementById("modalTitulo").textContent = "Editar Arquivo";
+  document.getElementById("nome").value  = a.nome;
+  document.getElementById("link").value  = a.link;
+  document.getElementById("icone").value = a.icone;
+  document.getElementById("modal").style.display = "flex";
+}
+
+// ── Valida e salva arquivo (novo ou editado) ──
+// NOVO: validação de campos + spinner de loading + token enviado
+function salvar() {
+  const nome  = document.getElementById("nome").value.trim();
+  const link  = document.getElementById("link").value.trim();
+  const icone = document.getElementById("icone").value;
+  const erro  = document.getElementById("erroModal");
+
+  // Validação de campos obrigatórios
+  if (!nome) {
+    erro.textContent = "Informe um nome para o arquivo.";
+    erro.style.display = "block";
+    return;
+  }
+  if (!link) {
+    erro.textContent = "Informe o link do arquivo.";
+    erro.style.display = "block";
+    return;
+  }
+  erro.style.display = "none";
+
+  // Loading: desabilita botão e mostra spinner
+  const btn     = document.getElementById("btnSalvar");
+  const spinner = document.getElementById("spinnerSalvar");
+  btn.disabled          = true;
+  spinner.style.display = "inline-block";
+
+  api({
+    action:  "addArquivo",
+    projeto: projetoAtual,
+    nome,
+    link,
+    icone,
+    token:   user.token  // token de sessão para autenticar escrita
+  }, res => {
+    btn.disabled          = false;
+    spinner.style.display = "none";
+
+    if (!res.ok) {
+      // Sessão expirada: força novo login
+      if (res.erro && res.erro.includes("Sessão expirada")) { forcarLogout(); return; }
+      erro.textContent   = res.erro || "Erro ao salvar.";
+      erro.style.display = "block";
+      return;
+    }
+
+    fecharModal();
+    carregarArquivos();
+    toast("Arquivo salvo com sucesso!");
+  }, msg => {
+    btn.disabled = false;
+    spinner.style.display = "none";
+    erro.textContent   = msg;
+    erro.style.display = "block";
+  });
+}
+
+// ── Exclui arquivo com confirmação ──
+// NOVO: token enviado + feedback de erro se falhar
+function excluir(nome) {
+  if (!confirm("Excluir o arquivo \"" + nome + "\"?")) return;
+
+  api({
+    action:  "deleteArquivo",
+    projeto: projetoAtual,
+    nome,
+    token:   user.token  // token de sessão para autenticar exclusão
+  }, res => {
+    if (!res.ok) {
+      if (res.erro && res.erro.includes("Sessão expirada")) { forcarLogout(); return; }
+      toast("Erro: " + (res.erro || "Não foi possível excluir."));
+      return;
+    }
+    carregarArquivos();
+    toast("Arquivo excluído.");
+  });
+}
+
+// ── Abre visualizador fullscreen com iframe ──
+function visualizar(link) {
+  document.getElementById("viewer").style.display  = "flex";
+  document.getElementById("frame").src             = link;
+  document.getElementById("download").href         = link;
+}
+
+// ── Fecha visualizador e limpa iframe ──
+function fecharViewer() {
+  document.getElementById("viewer").style.display = "none";
+  document.getElementById("frame").src            = "";
+}
+
+// ── Inicializa o painel ──
+iniciar();
+</script>
+</body>
+</html>
