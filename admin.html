@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexTag — Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* ════════════════════════════════════════
+   RESET & BASE
+════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0f1117;
+  --surface:   #1a1d27;
+  --surface2:  #22263a;
+  --border:    #2e3150;
+  --accent:    #4f6ef7;
+  --accent2:   #7c3aed;
+  --danger:    #ef4444;
+  --success:   #22c55e;
+  --warning:   #f59e0b;
+  --text:      #e8eaf6;
+  --muted:     #7b80a0;
+  --radius:    10px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* ════════════════════════════════════════
+   TELA DE LOGIN
+════════════════════════════════════════ */
+#loginScreen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 60% 40%, #1e2240 0%, #0f1117 70%);
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 44px 40px;
+  width: 340px;
+  text-align: center;
+}
+
+.login-card .badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.login-card h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #fff;
+}
+
+.login-card p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+
+/* ════════════════════════════════════════
+   INPUTS GLOBAIS
+════════════════════════════════════════ */
+input, select, textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .2s;
+  margin-bottom: 10px;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+select option { background: var(--surface2); }
+textarea { resize: vertical; min-height: 70px; }
+
+/* ════════════════════════════════════════
+   BOTÕES
+════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+}
+.btn:hover   { opacity: .88; }
+.btn:active  { transform: scale(.97); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-primary  { background: var(--accent);  color: #fff; }
+.btn-danger   { background: var(--danger);  color: #fff; }
+.btn-success  { background: var(--success); color: #fff; }
+.btn-ghost    { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-sm       { padding: 5px 10px; font-size: 12px; }
+.btn-full     { width: 100%; justify-content: center; padding: 11px; }
+
+/* ════════════════════════════════════════
+   SPINNER
+════════════════════════════════════════ */
+.spin {
+  display: none;
+  width: 14px; height: 14px;
+  border: 2px solid #ffffff44;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: rot .6s linear infinite;
+}
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* ════════════════════════════════════════
+   LAYOUT DO PAINEL
+════════════════════════════════════════ */
+#adminPanel { display: none; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-logo span {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -.01em;
+}
+.sidebar-logo small {
+  display: block;
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  color: var(--muted);
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all .15s;
+  font-size: 13px;
+  font-weight: 500;
+}
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: #fff; border-left-color: var(--accent); background: var(--surface2); }
+.nav-item i { width: 16px; text-align: center; }
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 16px 20px 0;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Main ── */
+.main {
+  padding: 32px 36px;
+  overflow-y: auto;
+}
+
+.page-section { display: none; }
+.page-section.active { display: block; }
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.page-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+.page-header p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ════════════════════════════════════════
+   CARDS / TABELAS
+════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-size: 13px;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+
+/* ════════════════════════════════════════
+   BADGES DE STATUS
+════════════════════════════════════════ */
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.tag-blue    { background: #1e3a8a33; color: #93c5fd; }
+.tag-green   { background: #14532d33; color: #86efac; }
+.tag-red     { background: #7f1d1d33; color: #fca5a5; }
+.tag-yellow  { background: #78350f33; color: #fcd34d; }
+.tag-purple  { background: #4c1d9533; color: #c4b5fd; }
+
+/* ════════════════════════════════════════
+   MODAL
+════════════════════════════════════════ */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 20px;
+}
+.modal-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+label.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+/* ════════════════════════════════════════
+   TOAST
+════════════════════════════════════════ */
+#toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all .25s;
+  pointer-events: none;
+  z-index: 200;
+  max-width: 300px;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+#toast.ok   { border-left: 3px solid var(--success); }
+#toast.erro { border-left: 3px solid var(--danger); }
+
+/* ════════════════════════════════════════
+   ERRO INLINE
+════════════════════════════════════════ */
+.field-erro {
+  font-size: 12px;
+  color: #fca5a5;
+  margin: -6px 0 8px;
+  display: none;
+}
+
+/* ── Loading state ── */
+.loading-row td {
+  text-align: center;
+  color: var(--muted);
+  padding: 32px;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     TELA DE LOGIN ADMIN
+══════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <span class="badge">Admin</span>
+    <h1>NexTag Admin</h1>
+    <p>Acesso restrito ao administrador do sistema</p>
+
+    <input id="senhaAdmin" type="password" placeholder="Senha de administrador"
+           onkeydown="if(event.key==='Enter') loginAdmin()">
+    <p id="erroAdmin" class="field-erro" style="text-align:center"></p>
+
+    <button class="btn btn-primary btn-full" id="btnLoginAdmin" onclick="loginAdmin()">
+      <i class="fas fa-lock"></i>
+      <span id="labelLoginAdmin">Entrar</span>
+      <span class="spin" id="spinLogin"></span>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAINEL ADMIN
+══════════════════════════════════════ -->
+<div id="adminPanel">
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span>NexTag</span>
+      <small>Painel Admin</small>
+    </div>
+
+    <nav>
+      <div class="nav-item active" onclick="irPara('usuarios')">
+        <i class="fas fa-users"></i> Usuários
+      </div>
+      <div class="nav-item" onclick="irPara('projetos')">
+        <i class="fas fa-folder"></i> Projetos
+      </div>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <button class="btn btn-ghost btn-full btn-sm" onclick="sairAdmin()">
+        <i class="fas fa-right-from-bracket"></i> Sair
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <!-- ══════════════════════════════
+         SEÇÃO: USUÁRIOS
+    ══════════════════════════════ -->
+    <section id="secUsuarios" class="page-section active">
+      <div class="page-header">
+        <div>
+          <h2>Usuários</h2>
+          <p>Gerencie clientes e seus acessos</p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalNovoUsuario()">
+          <i class="fas fa-plus"></i> Novo usuário
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Email</th>
+                <th>Projetos</th>
+                <th>Tipo</th>
+                <th>Senha</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaUsuarios">
+              <tr class="loading-row"><td colspan="6">Carregando usuários…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════
+         SEÇÃO: PROJETOS
+    ══════════════════════════════ -->
+    <section id="secProjetos" class="page-section">
+      <div class="page-header">
+        <div>
+          <h2>Projetos</h2>
+          <p>Gerencie obras e seus dados visuais</p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalNovoProjeto()">
+          <i class="fas fa-plus"></i> Novo projeto
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Acesso Tag</th>
+                <th>Tema</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaProjetos">
+              <tr class="loading-row"><td colspan="5">Carregando projetos…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: NOVO / EDITAR USUÁRIO
+══════════════════════════════════════ -->
+<div class="modal-bg" id="modalUsuario">
+  <div class="modal">
+    <h3 id="tituloModalUsuario">Novo Usuário</h3>
+
+    <label class="field-label">Usuário *</label>
+    <input id="uUsuario" placeholder="Ex: cliente_joao">
+
+    <label class="field-label">Email *</label>
+    <input id="uEmail" type="email" placeholder="email@exemplo.com">
+
+    <label class="field-label">Projetos (separados por vírgula) *</label>
+    <input id="uProjetos" placeholder="Ex: PROJ001,PROJ002">
+
+    <label class="field-label">Tipo de acesso</label>
+    <select id="uTipo">
+      <option value="painel">painel</option>
+      <option value="painel,tag">painel,tag</option>
+      <option value="tag">tag</option>
+    </select>
+
+    <label class="field-label">Acesso tag</label>
+    <select id="uAcessoTag">
+      <option value="livre">livre (sem senha)</option>
+      <option value="senha">senha (requer login)</option>
+    </select>
+
+    <p id="erroModalUsuario" class="field-erro"></p>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modalUsuario')">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvarUsuario" onclick="salvarUsuario()">
+        <span id="labelBtnUsuario">Salvar</span>
+        <span class="spin" id="spinUsuario"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: NOVO / EDITAR PROJETO
+══════════════════════════════════════ -->
+<div class="modal-bg" id="modalProjeto">
+  <div class="modal">
+    <h3 id="tituloModalProjeto">Novo Projeto</h3>
+
+    <label class="field-label">ID do Projeto * (sem espaços)</label>
+    <input id="pId" placeholder="Ex: PROJ003">
+
+    <label class="field-label">Nome</label>
+    <input id="pNome" placeholder="Ex: Residencial Pitanga">
+
+    <label class="field-label">Descrição</label>
+    <textarea id="pDescricao" placeholder="Descrição exibida na tag"></textarea>
+
+    <label class="field-label">URL do Logo</label>
+    <input id="pLogo" placeholder="https://...">
+
+    <label class="field-label">URL do Background</label>
+    <input id="pBackground" placeholder="https://...">
+
+    <label class="field-label">Acesso da Tag</label>
+    <select id="pAcessoTag">
+      <option value="livre">livre (sem senha)</option>
+      <option value="senha">senha (requer login)</option>
+    </select>
+
+    <label class="field-label">Tema do glassmorphism</label>
+    <select id="pGlass">
+      <option value="escuro">escuro</option>
+      <option value="claro">claro</option>
+    </select>
+
+    <p id="erroModalProjeto" class="field-erro"></p>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modalProjeto')">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvarProjeto" onclick="salvarProjeto()">
+        <span id="labelBtnProjeto">Salvar</span>
+        <span class="spin" id="spinProjeto"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast de notificação -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIGURAÇÕES — EDITE AQUI
+// ══════════════════════════════════════════════
+
+// Senha fixa do admin (só você sabe)
+const SENHA_ADMIN = "NexTag@Admin2024";
+
+// URL do backend Apps Script
+const API = "https://script.google.com/macros/s/AKfycby-goyk5onX2MtZEqoF1ggIRGmuN7yqN1guhltp8gKyJxBCmcf3sg7M5PMWHCr3SqPbNw/exec";
+
+// ══════════════════════════════════════════════
+//  ESTADO LOCAL
+// ══════════════════════════════════════════════
+let usuarios  = [];  // cache local de usuários
+let projetos  = [];  // cache local de projetos
+let editandoUsuario  = null; // usuário em edição
+let editandoProjeto  = null; // projeto em edição
+
+// ══════════════════════════════════════════════
+//  API JSONP com timeout
+// ══════════════════════════════════════════════
+function api(params, cb, onErro) {
+  const s = document.createElement("script");
+  const cbName = "cb_" + Date.now() + "_" + Math.floor(Math.random()*9999);
+  const timer = setTimeout(() => {
+    delete window[cbName]; s.remove();
+    if (onErro) onErro("Tempo esgotado. Tente novamente.");
+  }, 15000);
+  window[cbName] = res => { clearTimeout(timer); delete window[cbName]; s.remove(); cb(res); };
+  s.src = API + "?" + new URLSearchParams(params) + "&callback=" + cbName;
+  document.body.appendChild(s);
+}
+
+// ══════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════
+function toast(msg, tipo = "ok") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "show " + tipo;
+  setTimeout(() => el.className = "", 3000);
+}
+
+// ══════════════════════════════════════════════
+//  LOGIN ADMIN (senha local — não vai ao backend)
+// ══════════════════════════════════════════════
+function loginAdmin() {
+  const senha = document.getElementById("senhaAdmin").value;
+  const erro  = document.getElementById("erroAdmin");
+  erro.style.display = "none";
+
+  if (senha !== SENHA_ADMIN) {
+    erro.textContent   = "Senha incorreta.";
+    erro.style.display = "block";
+    return;
+  }
+
+  // Marca sessão admin no sessionStorage (some ao fechar aba)
+  sessionStorage.setItem("adminOk", "1");
+  mostrarPainel();
+}
+
+function sairAdmin() {
+  sessionStorage.removeItem("adminOk");
+  location.reload();
+}
+
+function mostrarPainel() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("adminPanel").style.display  = "block";
+  carregarUsuarios();
+  carregarProjetos();
+}
+
+// ══════════════════════════════════════════════
+//  NAVEGAÇÃO ENTRE SEÇÕES
+// ══════════════════════════════════════════════
+function irPara(secao) {
+  document.querySelectorAll(".page-section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById("sec" + secao.charAt(0).toUpperCase() + secao.slice(1)).classList.add("active");
+  event.currentTarget.classList.add("active");
+}
+
+// ══════════════════════════════════════════════
+//  MODAL: abrir e fechar
+// ══════════════════════════════════════════════
+function abrirModal(id) { document.getElementById(id).classList.add("open"); }
+function fecharModal(id) { document.getElementById(id).classList.remove("open"); }
+
+// Fecha modal clicando no fundo
+document.querySelectorAll(".modal-bg").forEach(bg => {
+  bg.addEventListener("click", e => { if (e.target === bg) bg.classList.remove("open"); });
+});
+
+// ══════════════════════════════════════════════
+//  CARREGAR USUÁRIOS da planilha
+// ══════════════════════════════════════════════
+function carregarUsuarios() {
+  document.getElementById("tabelaUsuarios").innerHTML =
+    '<tr class="loading-row"><td colspan="6">Carregando…</td></tr>';
+
+  api({ action: "adminGetUsuarios" }, res => {
+    usuarios = res.usuarios || [];
+    renderizarUsuarios();
+  }, () => toast("Erro ao carregar usuários", "erro"));
+}
+
+function renderizarUsuarios() {
+  const tbody = document.getElementById("tabelaUsuarios");
+
+  if (usuarios.length === 0) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6">Nenhum usuário cadastrado.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = usuarios.map((u, i) => `
+    <tr>
+      <td><strong>${esc(u.usuario)}</strong></td>
+      <td>${esc(u.email || "—")}</td>
+      <td>
+        ${(u.projetos || "").split(",").map(p =>
+          `<span class="tag tag-blue">${esc(p.trim())}</span>`
+        ).join(" ")}
+      </td>
+      <td><span class="tag tag-purple">${esc(u.tipo || "painel")}</span></td>
+      <td>
+        ${u.tem_senha
+          ? '<span class="tag tag-green">Definida</span>'
+          : '<span class="tag tag-yellow">Pendente</span>'}
+      </td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="editarUsuario(${i})" title="Editar">
+            <i class="fas fa-pen"></i>
+          </button>
+          ${!u.tem_senha || true ? `
+          <button class="btn btn-primary btn-sm" onclick="enviarConvite('${esc(u.usuario)}')" title="Enviar convite">
+            <i class="fas fa-envelope"></i> Convidar
+          </button>` : ""}
+          <button class="btn btn-danger btn-sm" onclick="desativarUsuario('${esc(u.usuario)}')" title="Desativar">
+            <i class="fas fa-ban"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+// ══════════════════════════════════════════════
+//  ENVIAR CONVITE por email
+// ══════════════════════════════════════════════
+function enviarConvite(usuario) {
+  if (!confirm(`Enviar email de convite para "${usuario}"?`)) return;
+
+  api({ action: "enviarConvite", usuario }, res => {
+    if (res.ok) {
+      toast("Convite enviado com sucesso!", "ok");
+      carregarUsuarios();
+    } else {
+      toast("Erro: " + (res.erro || "Falha ao enviar"), "erro");
+    }
+  }, () => toast("Erro de conexão", "erro"));
+}
+
+// ══════════════════════════════════════════════
+//  MODAL: NOVO USUÁRIO
+// ══════════════════════════════════════════════
+function abrirModalNovoUsuario() {
+  editandoUsuario = null;
+  document.getElementById("tituloModalUsuario").textContent = "Novo Usuário";
+  document.getElementById("uUsuario").value    = "";
+  document.getElementById("uEmail").value      = "";
+  document.getElementById("uProjetos").value   = "";
+  document.getElementById("uTipo").value       = "painel";
+  document.getElementById("uAcessoTag").value  = "livre";
+  document.getElementById("uUsuario").disabled = false;
+  document.getElementById("erroModalUsuario").style.display = "none";
+  abrirModal("modalUsuario");
+}
+
+// ══════════════════════════════════════════════
+//  EDITAR USUÁRIO existente
+// ══════════════════════════════════════════════
+function editarUsuario(idx) {
+  editandoUsuario = idx;
+  const u = usuarios[idx];
+  document.getElementById("tituloModalUsuario").textContent = "Editar Usuário";
+  document.getElementById("uUsuario").value    = u.usuario;
+  document.getElementById("uEmail").value      = u.email    || "";
+  document.getElementById("uProjetos").value   = u.projetos || "";
+  document.getElementById("uTipo").value       = u.tipo     || "painel";
+  document.getElementById("uAcessoTag").value  = u.acesso_tag || "livre";
+  document.getElementById("uUsuario").disabled = true; // não permite mudar o usuário
+  document.getElementById("erroModalUsuario").style.display = "none";
+  abrirModal("modalUsuario");
+}
+
+// ══════════════════════════════════════════════
+//  SALVAR USUÁRIO (novo ou edição)
+// ══════════════════════════════════════════════
+function salvarUsuario() {
+  const usuario    = document.getElementById("uUsuario").value.trim();
+  const email      = document.getElementById("uEmail").value.trim();
+  const projetosV  = document.getElementById("uProjetos").value.trim();
+  const tipo       = document.getElementById("uTipo").value;
+  const acessoTag  = document.getElementById("uAcessoTag").value;
+  const erro       = document.getElementById("erroModalUsuario");
+  const btn        = document.getElementById("btnSalvarUsuario");
+  const spin       = document.getElementById("spinUsuario");
+  const label      = document.getElementById("labelBtnUsuario");
+
+  erro.style.display = "none";
+
+  if (!usuario) { erro.textContent = "Informe o usuário."; erro.style.display = "block"; return; }
+  if (!email)   { erro.textContent = "Informe o email.";   erro.style.display = "block"; return; }
+  if (!projetosV) { erro.textContent = "Informe pelo menos um projeto."; erro.style.display = "block"; return; }
+
+  btn.disabled = true; spin.style.display = "inline-block"; label.textContent = "Salvando…";
+
+  api({
+    action:     editandoUsuario === null ? "adminCriarUsuario" : "adminEditarUsuario",
+    usuario, email,
+    projetos:   projetosV,
+    tipo,
+    acesso_tag: acessoTag
+  }, res => {
+    btn.disabled = false; spin.style.display = "none"; label.textContent = "Salvar";
+    if (res.ok) {
+      fecharModal("modalUsuario");
+      toast(editandoUsuario === null ? "Usuário criado!" : "Usuário atualizado!", "ok");
+      carregarUsuarios();
+    } else {
+      erro.textContent   = res.erro || "Erro ao salvar.";
+      erro.style.display = "block";
+    }
+  }, msg => {
+    btn.disabled = false; spin.style.display = "none"; label.textContent = "Salvar";
+    erro.textContent = msg; erro.style.display = "block";
+  });
+}
+
+// ══════════════════════════════════════════════
+//  DESATIVAR USUÁRIO (limpa a senha — bloqueia acesso)
+// ══════════════════════════════════════════════
+function desativarUsuario(usuario) {
+  if (!confirm(`Desativar "${usuario}"? O usuário perderá o acesso até receber novo convite.`)) return;
+
+  api({ action: "adminDesativarUsuario", usuario }, res => {
+    if (res.ok) {
+      toast("Usuário desativado.", "ok");
+      carregarUsuarios();
+    } else {
+      toast("Erro: " + (res.erro || "Falha"), "erro");
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  CARREGAR PROJETOS da planilha
+// ══════════════════════════════════════════════
+function carregarProjetos() {
+  document.getElementById("tabelaProjetos").innerHTML =
+    '<tr class="loading-row"><td colspan="5">Carregando…</td></tr>';
+
+  api({ action: "getProjetos" }, res => {
+    projetos = res.projetos || [];
+    renderizarProjetos();
+  }, () => toast("Erro ao carregar projetos", "erro"));
+}
+
+function renderizarProjetos() {
+  const tbody = document.getElementById("tabelaProjetos");
+
+  if (projetos.length === 0) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Nenhum projeto cadastrado.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = projetos.map((p, i) => `
+    <tr>
+      <td><code style="color:var(--accent);font-size:12px">${esc(p.id_projeto)}</code></td>
+      <td><strong>${esc(p.nome || "—")}</strong></td>
+      <td>
+        <span class="tag ${p.acesso_tag === 'livre' ? 'tag-green' : 'tag-yellow'}">
+          ${p.acesso_tag === 'livre' ? 'Livre' : 'Senha'}
+        </span>
+      </td>
+      <td>
+        <span class="tag ${p.glass_effect === 'claro' ? 'tag-blue' : 'tag-purple'}">
+          ${esc(p.glass_effect || 'escuro')}
+        </span>
+      </td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="editarProjeto(${i})" title="Editar">
+            <i class="fas fa-pen"></i>
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="window.open('tag.html?id=${esc(p.id_projeto)}','_blank')" title="Ver tag">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+// ══════════════════════════════════════════════
+//  MODAL: NOVO PROJETO
+// ══════════════════════════════════════════════
+function abrirModalNovoProjeto() {
+  editandoProjeto = null;
+  document.getElementById("tituloModalProjeto").textContent = "Novo Projeto";
+  ["pId","pNome","pDescricao","pLogo","pBackground"].forEach(id =>
+    document.getElementById(id).value = ""
+  );
+  document.getElementById("pId").disabled        = false;
+  document.getElementById("pAcessoTag").value    = "livre";
+  document.getElementById("pGlass").value        = "escuro";
+  document.getElementById("erroModalProjeto").style.display = "none";
+  abrirModal("modalProjeto");
+}
+
+// ══════════════════════════════════════════════
+//  EDITAR PROJETO existente
+// ══════════════════════════════════════════════
+function editarProjeto(idx) {
+  editandoProjeto = idx;
+  const p = projetos[idx];
+  document.getElementById("tituloModalProjeto").textContent = "Editar Projeto";
+  document.getElementById("pId").value         = p.id_projeto  || "";
+  document.getElementById("pNome").value       = p.nome        || "";
+  document.getElementById("pDescricao").value  = p.descricao   || "";
+  document.getElementById("pLogo").value       = p.logo        || "";
+  document.getElementById("pBackground").value = p.background  || "";
+  document.getElementById("pAcessoTag").value  = p.acesso_tag  || "livre";
+  document.getElementById("pGlass").value      = p.glass_effect || "escuro";
+  document.getElementById("pId").disabled      = true; // ID não muda
+  document.getElementById("erroModalProjeto").style.display = "none";
+  abrirModal("modalProjeto");
+}
+
+// ══════════════════════════════════════════════
+//  SALVAR PROJETO (novo ou edição)
+// ══════════════════════════════════════════════
+function salvarProjeto() {
+  const id_projeto  = document.getElementById("pId").value.trim();
+  const nome        = document.getElementById("pNome").value.trim();
+  const descricao   = document.getElementById("pDescricao").value.trim();
+  const logo        = document.getElementById("pLogo").value.trim();
+  const background  = document.getElementById("pBackground").value.trim();
+  const acesso_tag  = document.getElementById("pAcessoTag").value;
+  const glass_effect = document.getElementById("pGlass").value;
+  const erro        = document.getElementById("erroModalProjeto");
+  const btn         = document.getElementById("btnSalvarProjeto");
+  const spin        = document.getElementById("spinProjeto");
+  const label       = document.getElementById("labelBtnProjeto");
+
+  erro.style.display = "none";
+  if (!id_projeto) { erro.textContent = "Informe o ID do projeto."; erro.style.display = "block"; return; }
+  if (!nome)       { erro.textContent = "Informe o nome.";          erro.style.display = "block"; return; }
+  if (/\s/.test(id_projeto)) { erro.textContent = "ID não pode ter espaços."; erro.style.display = "block"; return; }
+
+  btn.disabled = true; spin.style.display = "inline-block"; label.textContent = "Salvando…";
+
+  api({
+    action: editandoProjeto === null ? "adminCriarProjeto" : "adminEditarProjeto",
+    id_projeto, nome, descricao, logo, background, acesso_tag, glass_effect
+  }, res => {
+    btn.disabled = false; spin.style.display = "none"; label.textContent = "Salvar";
+    if (res.ok) {
+      fecharModal("modalProjeto");
+      toast(editandoProjeto === null ? "Projeto criado!" : "Projeto atualizado!", "ok");
+      carregarProjetos();
+    } else {
+      erro.textContent = res.erro || "Erro ao salvar.";
+      erro.style.display = "block";
+    }
+  }, msg => {
+    btn.disabled = false; spin.style.display = "none"; label.textContent = "Salvar";
+    erro.textContent = msg; erro.style.display = "block";
+  });
+}
+
+// ══════════════════════════════════════════════
+//  HELPER: escapa HTML contra XSS
+// ══════════════════════════════════════════════
+function esc(str) {
+  return String(str || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+// ══════════════════════════════════════════════
+//  INICIALIZAÇÃO
+// ══════════════════════════════════════════════
+window.onload = () => {
+  // Se já estava logado nesta aba, vai direto para o painel
+  if (sessionStorage.getItem("adminOk") === "1") {
+    mostrarPainel();
+  }
+};
+</script>
+</body>
+</html>
