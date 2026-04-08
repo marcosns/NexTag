@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexTag</title>
+
+<link rel="icon" href="https://raw.githubusercontent.com/marcosns/NexTag/main/favicon.ico">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+/* ── Base: fundo escuro padrão, cor ajustada pelo tema ── */
+body {
+  margin:0;
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+  color:white;
+  background:#111;
+  background-size:cover;
+  background-position:center;
+  min-height:100vh;
+}
+
+/* ── Caixa de login (aparece se acesso_tag = "senha") ── */
+#loginBox {
+  text-align:center;
+  margin-top:80px;
+  display:none;
+}
+
+input {
+  padding:10px;
+  margin:5px;
+  border-radius:8px;
+  border:none;
+  width:200px;
+}
+
+button {
+  padding:10px 20px;
+  border:none;
+  border-radius:8px;
+  background:#00c3ff;
+  color:white;
+  cursor:pointer;
+}
+button:disabled { opacity:0.5; cursor:not-allowed; }
+
+/* ── Container principal com glassmorphism ── */
+.container {
+  display:none;
+  backdrop-filter:blur(12px);
+  border-radius:20px;
+  padding:30px;
+  width:90%;
+  max-width:500px;
+  margin:40px auto;
+  text-align:center;
+  transition:background 0.3s;
+}
+
+/* ── Logo do projeto ── */
+#logo { max-width:180px; margin-bottom:10px; }
+
+/* ── Links de arquivos ── */
+/* O estilo de cor é aplicado dinamicamente pelo tema (claro/escuro) */
+a {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  justify-content:center;
+  padding:12px;
+  margin:10px 0;
+  border-radius:10px;
+  text-decoration:none;
+  font-size:15px;
+  transition:opacity 0.2s;
+}
+a:hover { opacity:0.85; }
+
+/* ── Spinner de loading ── */
+#loading {
+  text-align:center;
+  font-size:13px;
+  opacity:0.7;
+  margin-top:12px;
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ── Tela de login (exibida se o projeto exigir senha) ── -->
+<div id="loginBox">
+  <h2>Acesso restrito</h2>
+  <input id="usuario" placeholder="Usuário"><br>
+  <input id="senha" type="password" placeholder="Senha"><br>
+  <button id="btnLogin" onclick="fazerLogin()">Entrar</button>
+  <p id="erro" style="color:red;"></p>
+</div>
+
+<!-- ── Container principal com logo, nome e lista de arquivos ── -->
+<div class="container" id="container">
+  <img id="logo" alt="Logo">
+  <h2 id="nome"></h2>
+  <p id="descricao"></p>
+  <div id="loading">Carregando arquivos...</div>
+  <div id="lista"></div>
+</div>
+
+<script>
+// ── URL do Apps Script backend ──
+const API_URL = "https://script.google.com/macros/s/AKfycby-goyk5onX2MtZEqoF1ggIRGmuN7yqN1guhltp8gKyJxBCmcf3sg7M5PMWHCr3SqPbNw/exe";
+
+// ── Tema ativo (claro ou escuro) definido depois do getProjeto ──
+// Guardado em variável para reaplicar depois que os links são criados
+let temaAtivo = "escuro";
+
+// ── Chama a API via JSONP com timeout de 12s ──
+function chamarAPI(params, callback, onErro) {
+  const cb = "cb_" + Date.now() + "_" + Math.floor(Math.random()*9999);
+  const script = document.createElement("script");
+
+  const timer = setTimeout(() => {
+    delete window[cb];
+    script.remove();
+    if (onErro) onErro("Tempo esgotado");
+  }, 12000);
+
+  window[cb] = function(data) {
+    clearTimeout(timer);
+    delete window[cb];
+    script.remove();
+    callback(data);
+  };
+
+  script.src = API_URL + "?" + new URLSearchParams(params) + "&callback=" + cb;
+  document.body.appendChild(script);
+}
+
+// ── Escapa HTML para evitar XSS ──
+function esc(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// ── Lê o id do projeto da URL (?id=PROJ001) ──
+function getProjeto() {
+  return new URLSearchParams(window.location.search).get("id");
+}
+
+// ── Login: autentica e inicia sistema com token ──
+function fazerLogin() {
+  const usuario = document.getElementById("usuario").value.trim();
+  const senha   = document.getElementById("senha").value;
+  const btn     = document.getElementById("btnLogin");
+
+  if (!usuario || !senha) {
+    document.getElementById("erro").textContent = "Preencha usuário e senha.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Entrando...";
+
+  chamarAPI({
+    action:  "login",
+    usuario,
+    senha,
+    tipo:    "tag"
+  }, res => {
+    btn.disabled    = false;
+    btn.textContent = "Entrar";
+
+    if (res.ok) {
+      // Salva sessão mínima (sem senha) com token
+      localStorage.setItem("user_tag", JSON.stringify({
+        usuario: res.usuario,
+        token:   res.token,
+        projetos: res.projetos
+      }));
+      iniciarSistema(res);
+    } else {
+      document.getElementById("erro").textContent = res.erro || "Login inválido";
+    }
+  }, () => {
+    btn.disabled    = false;
+    btn.textContent = "Entrar";
+    document.getElementById("erro").textContent = "Erro de conexão. Tente novamente.";
+  });
+}
+
+// ── Inicia o sistema após autenticação (ou livre) ──
+function iniciarSistema(user = null) {
+  const projeto = getProjeto();
+
+  // Verifica permissão de acesso ao projeto
+  if (user && !user.projetos.includes(projeto)) {
+    alert("Você não tem acesso a este projeto.");
+    return;
+  }
+
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("container").style.display = "block";
+
+  carregar();
+}
+
+// ── Carrega dados do projeto e arquivos ──
+function carregar() {
+  const projeto = getProjeto();
+
+  // 1. Carrega dados visuais e textuais do projeto
+  chamarAPI({ action: "getProjeto", id_projeto: projeto }, d => {
+    if (!d.projeto) return;
+    const p = d.projeto;
+
+    // Texto
+    document.getElementById("nome").textContent      = p.nome      || "";
+    document.getElementById("descricao").textContent = p.descricao || "";
+
+    // Fundo personalizado do projeto
+    if (p.background) {
+      document.body.style.backgroundImage = `url('${p.background}')`;
+    }
+
+    // Logo do projeto
+    if (p.logo) {
+      document.getElementById("logo").src = p.logo;
+    }
+
+    // Salva o tema para reaplicar depois que os links forem criados
+    temaAtivo = p.glass_effect === "claro" ? "claro" : "escuro";
+    aplicarTemaContainer(temaAtivo);
+  });
+
+  // 2. Carrega lista de arquivos
+  document.getElementById("loading").style.display = "block";
+
+  chamarAPI({ action: "getArquivos", projeto }, d => {
+    document.getElementById("loading").style.display = "none";
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+
+    const arquivos = d.arquivos || [];
+
+    if (arquivos.length === 0) {
+      lista.innerHTML = "<p style='opacity:0.6;font-size:14px'>Nenhum arquivo disponível.</p>";
+      return;
+    }
+
+    arquivos.forEach(a => {
+      const el = document.createElement("a");
+      el.href   = a.link;
+      el.target = "_blank";
+      el.rel    = "noopener noreferrer"; // segurança: evita acesso ao window.opener
+
+      // Ícone e nome escapados contra XSS
+      const icon = document.createElement("i");
+      icon.className = esc(a.icone || "fas fa-file");
+
+      const span = document.createElement("span");
+      span.textContent = a.nome; // textContent é seguro contra XSS
+
+      el.appendChild(icon);
+      el.appendChild(span);
+      lista.appendChild(el);
+    });
+
+    // CORRIGIDO: aplica o tema DEPOIS que os links foram criados
+    // (antes era chamado antes dos elementos existirem)
+    aplicarTemaLinks(temaAtivo);
+  });
+}
+
+// ── Aplica tema (claro/escuro) no container e no body ──
+function aplicarTemaContainer(tema) {
+  const container = document.getElementById("container");
+
+  if (tema === "claro") {
+    document.body.style.color  = "#111";
+    container.style.background = "rgba(255,255,255,0.6)";
+  } else {
+    document.body.style.color  = "white";
+    container.style.background = "rgba(0,0,0,0.4)";
+  }
+}
+
+// ── Aplica tema nos links (chamado depois que os links existem) ──
+// Separado de aplicarTemaContainer para garantir ordem de execução
+function aplicarTemaLinks(tema) {
+  document.querySelectorAll("#lista a").forEach(a => {
+    if (tema === "claro") {
+      a.style.background = "rgba(0,0,0,0.1)";
+      a.style.color      = "#111";
+    } else {
+      a.style.background = "rgba(255,255,255,0.1)";
+      a.style.color      = "white";
+    }
+  });
+}
+
+// ── Inicialização: verifica acesso_tag do projeto ──
+window.onload = function() {
+  const projeto = getProjeto();
+
+  if (!projeto) {
+    document.body.innerHTML = "<p style='color:white;text-align:center;margin-top:80px'>Projeto não encontrado na URL.</p>";
+    return;
+  }
+
+  chamarAPI({ action: "getAcessoTag", projeto }, res => {
+    if (res.acesso_tag === "livre") {
+      // Acesso livre: exibe conteúdo direto sem login
+      iniciarSistema();
+    } else {
+      // Acesso restrito: exibe tela de login
+      document.getElementById("loginBox").style.display = "block";
+    }
+  });
+};
+</script>
+</body>
+</html>
