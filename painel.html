@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexTag — Painel</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F1F5F9;--surface:#fff;--border:#E2E8F0;
+  --accent:#2563EB;--accent-h:#1D4ED8;
+  --danger:#EF4444;--success:#22C55E;
+  --text:#0F172A;--muted:#64748B;
+  --sidebar:#0F172A;
+  --r:10px;--topbar:58px;--sw:220px;--mob-nav:62px;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;overflow-x:hidden}
+
+/* ══════════════════════════════
+   LAYOUT DESKTOP
+══════════════════════════════ */
+.layout{display:grid;grid-template-columns:var(--sw) 1fr;height:100vh}
+.sidebar{background:var(--sidebar);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto}
+
+/* ── Logo: fundo branco para qualquer logo escuro ── */
+.sb-top{padding:20px 16px 18px;border-bottom:1px solid #1E293B;flex-shrink:0}
+.brand{
+  display:flex;align-items:center;gap:10px;margin-bottom:18px;
+  background:#fff;border-radius:10px;padding:8px 12px;
+}
+.brand img{height:28px;object-fit:contain;max-width:120px}
+.brand-txt{font-size:14px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.proj-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;margin-bottom:6px}
+.proj-sel{
+  width:100%;background:#1E293B;border:1px solid #334155;border-radius:var(--r);
+  color:#fff;padding:8px 28px 8px 10px;font-size:13px;outline:none;cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;transition:border-color .2s
+}
+.proj-sel:focus{border-color:var(--accent)}
+
+.sb-nav{padding:10px 0;flex:1}
+.nav-it{
+  display:flex;align-items:center;gap:10px;padding:10px 16px;
+  color:#94A3B8;cursor:pointer;border-left:3px solid transparent;
+  font-size:13px;font-weight:500;transition:all .15s
+}
+.nav-it i{width:16px;text-align:center}
+.nav-it:hover{color:#fff;background:#1E293B}
+.nav-it.on{color:#fff;border-left-color:var(--accent);background:#1E293B}
+
+.sb-bottom{padding:12px 16px;border-top:1px solid #1E293B;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.sb-user{display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.uname{font-size:12px;color:#CBD5E1;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-out{background:none;border:none;color:#475569;cursor:pointer;padding:4px 6px;border-radius:6px;font-size:14px;transition:color .15s}
+.btn-out:hover{color:var(--danger)}
+
+/* ── Botão de ajuda na sidebar ── */
+.btn-help{
+  display:flex;align-items:center;gap:8px;
+  background:#1E293B;border:1px solid #334155;border-radius:var(--r);
+  color:#94A3B8;font-size:12px;padding:8px 12px;cursor:pointer;
+  transition:all .15s;width:100%;text-align:left;
+}
+.btn-help:hover{background:#273549;color:#fff;border-color:#4B5563}
+.btn-help i{font-size:13px;flex-shrink:0}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;height:100vh;overflow-y:auto}
+.topbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 24px;height:var(--topbar);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-shrink:0;position:sticky;top:0;z-index:10
+}
+.topbar h1{font-size:16px;font-weight:700}
+.topbar p{font-size:12px;color:var(--muted);margin-top:1px}
+.tb-right{display:flex;gap:8px;align-items:center}
+.content{padding:20px 24px;flex:1}
+
+/* ── Barra de ferramentas acima do grid ── */
+.toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin-bottom:16px;flex-wrap:wrap;
+}
+.toolbar-left{display:flex;align-items:center;gap:8px}
+.sort-label{font-size:12px;color:var(--muted);white-space:nowrap}
+.sort-btns{display:flex;gap:4px}
+.sort-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 10px;border:1px solid var(--border);border-radius:6px;
+  background:var(--surface);color:var(--muted);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap
+}
+.sort-btn:hover{border-color:var(--accent);color:var(--accent);background:#EFF6FF}
+.sort-btn.on{border-color:var(--accent);color:var(--accent);background:#EFF6FF}
+.drag-hint{
+  font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;
+  opacity:.7;white-space:nowrap
+}
+
+/* ══════════════════════════════
+   GRID DE ARQUIVOS
+══════════════════════════════ */
+.files-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:12px
+}
+
+/* Card com layout vertical — mais legível */
+.file-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;
+  transition:box-shadow .15s,border-color .15s,transform .15s;
+  cursor:default;position:relative;
+}
+.file-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);border-color:#CBD5E1}
+
+/* Handle de arrastar */
+.drag-handle{
+  position:absolute;top:10px;right:10px;
+  color:#CBD5E1;font-size:13px;cursor:grab;
+  opacity:0;transition:opacity .15s;
+  padding:2px 4px;
+}
+.file-card:hover .drag-handle{opacity:1}
+.file-card.dragging{opacity:.5;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:scale(1.02)}
+.file-card.drag-over{border-color:var(--accent);border-style:dashed}
+
+/* Ícone grande centralizado */
+.f-icon-wrap{
+  width:48px;height:48px;background:#EFF6FF;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:var(--accent);flex-shrink:0
+}
+
+/* Texto do arquivo */
+.f-body{width:100%;min-width:0}
+.f-name{
+  font-size:13px;font-weight:700;color:var(--text);
+  line-height:1.35;
+  /* nome exibido completo em até 2 linhas */
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;word-break:break-word;
+  margin-bottom:3px;
+}
+.f-type{font-size:11px;color:var(--muted);font-weight:500}
+
+/* Ações na base do card */
+.f-acts{
+  display:flex;gap:6px;width:100%;
+  border-top:1px solid var(--border);padding-top:10px;margin-top:2px
+}
+.ib{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  height:30px;background:var(--bg);border:none;border-radius:6px;
+  cursor:pointer;color:var(--muted);font-size:12px;gap:4px;
+  font-weight:500;transition:all .15s;font-family:inherit
+}
+.ib:hover{background:#E2E8F0;color:var(--text)}
+.ib.del:hover{background:#FEF2F2;color:var(--danger)}
+.ib span{font-size:11px}
+
+/* Estado vazio */
+.empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)}
+.empty i{font-size:42px;margin-bottom:14px;opacity:.22;display:block}
+.empty p{font-size:14px;line-height:1.6}
+
+/* Skeleton */
+.skel{background:linear-gradient(90deg,#F1F5F9 25%,#E2E8F0 50%,#F1F5F9 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:8px}
+@keyframes shim{to{background-position:-200% 0}}
+
+/* ══════════════════════════════
+   MODAL
+══════════════════════════════ */
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(2px)}
+.modal-bg.open{display:flex}
+@media(max-width:767px){
+  .modal-bg{align-items:flex-end}
+  .modal{border-radius:20px 20px 0 0!important;width:100%!important;max-width:100%!important;padding-bottom:24px}
+  .mhandle{display:block!important}
+}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.12)}
+.mhandle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;display:none}
+.mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.mhdr h3{font-size:16px;font-weight:700}
+.mcls{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px;border-radius:6px}
+.mcls:hover{color:var(--text)}
+.flbl{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:14px;outline:none;transition:border-color .2s;margin-bottom:14px;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.ferr{font-size:12px;color:var(--danger);margin:-10px 0 10px;display:none}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* ── Seletor de ícones ── */
+.ip-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:block}
+.ip-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px}
+@media(max-width:400px){.ip-grid{grid-template-columns:repeat(4,1fr)}}
+.ip-opt{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:18px;color:var(--muted);transition:all .15s;padding:6px 2px;background:var(--bg);user-select:none}
+.ip-opt:hover{border-color:var(--accent);color:var(--accent);background:#EFF6FF}
+.ip-opt.on{border-color:var(--accent);color:var(--accent);background:#EFF6FF;box-shadow:0 0 0 2px #BFDBFE}
+.ip-opt span{font-size:9px;color:var(--muted);text-align:center;line-height:1.2}
+.ip-opt.on span{color:var(--accent)}
+#icone{display:none}
+
+/* ── BOTÕES ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{opacity:.88}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-h);opacity:1}
+.btn-g{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn-g:hover{background:var(--bg);opacity:1}
+.btn-prev{background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0}
+.btn-prev:hover{background:#DCFCE7;opacity:1}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* ── VIEWER ── */
+.viewer{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column}
+.viewer.open{display:flex}
+.viewer iframe{flex:1;border:none}
+.vbar{padding:10px 16px;background:#111;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.vbar span{color:#94A3B8;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+
+/* ── SPIN & TOAST ── */
+.spin{display:none;width:14px;height:14px;border:2px solid #ffffff44;border-top-color:#fff;border-radius:50%;animation:rot .6s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(8px);background:#0F172A;color:#fff;padding:12px 20px;border-radius:50px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;pointer-events:none;z-index:300;display:flex;align-items:center;gap:8px;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── MODAL DE AJUDA ── */
+.help-modal .modal{max-width:400px}
+.help-info{display:flex;flex-direction:column;gap:12px}
+.help-row{display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)}
+.help-row i{font-size:18px;color:var(--accent);width:24px;text-align:center;flex-shrink:0}
+.help-row a{color:var(--accent);text-decoration:none;font-size:13px;font-weight:500}
+.help-row a:hover{text-decoration:underline}
+.help-row p{font-size:13px;color:var(--text)}
+
+/* ══════════════════════════════
+   MOBILE
+══════════════════════════════ */
+@media(max-width:767px){
+  .layout{grid-template-columns:1fr;height:auto}
+  .sidebar{position:fixed;bottom:0;left:0;right:0;top:auto;height:var(--mob-nav);flex-direction:row;z-index:50;border-top:1px solid #1E293B;overflow:visible}
+  .sb-top,.sb-nav,.sb-bottom{display:none}
+  .mob-nav{display:flex!important;width:100%;height:var(--mob-nav);align-items:center;justify-content:space-around}
+  .mob-it{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 12px;color:#94A3B8;cursor:pointer;font-size:10px;font-weight:600;border-radius:8px;transition:color .15s;flex:1;text-align:center}
+  .mob-it i{font-size:18px}
+  .mob-it.on,.mob-it:hover{color:var(--accent)}
+  .main{height:auto;padding-bottom:var(--mob-nav)}
+  .topbar{height:auto;padding:12px 16px;flex-wrap:wrap;gap:8px}
+  .topbar h1{font-size:14px}
+  .tb-right{width:100%;justify-content:flex-end}
+  .mob-proj{display:flex!important;align-items:center;gap:8px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .mob-proj label{font-size:12px;color:var(--muted);white-space:nowrap}
+  .mob-proj select{flex:1;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text);outline:none;margin-bottom:0;appearance:none}
+  .content{padding:12px 14px}
+  .files-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px}
+  .fab{display:flex!important}
+  .btn-new-d{display:none!important}
+  #toast{bottom:calc(var(--mob-nav) + 12px)!important}
+  .toolbar{gap:6px}
+  .drag-hint{display:none}
+}
+.mob-nav{display:none}
+.mob-proj{display:none}
+
+.fab{display:none;position:fixed;bottom:calc(var(--mob-nav) + 16px);right:16px;width:52px;height:52px;border-radius:50%;padding:0;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(37,99,235,.4);z-index:40}
+
+@media(max-width:500px){.hide-xs{display:none}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-top">
+      <!-- Logo com fundo branco garante visibilidade de logos escuros -->
+      <div class="brand">
+        <img src="nextag_logo.png" alt="NexTag" onerror="this.style.display='none'">
+        <span class="brand-txt" id="brandTxt">NexTag</span>
+      </div>
+      <p class="proj-lbl">Projeto ativo</p>
+      <select class="proj-sel" id="projetoSelect"></select>
+    </div>
+
+    <div class="sb-nav">
+      <div class="nav-it on"><i class="fas fa-folder-open"></i> Arquivos</div>
+    </div>
+
+    <div class="sb-bottom">
+      <!-- Botão de ajuda -->
+      <button class="btn-help" onclick="abrirAjuda()">
+        <i class="fas fa-circle-question"></i>
+        <span>Ajuda / Suporte</span>
+      </button>
+      <!-- Usuário + logout -->
+      <div class="sb-user">
+        <div class="avatar" id="av">?</div>
+        <span class="uname" id="unm">—</span>
+        <button class="btn-out" onclick="logout()" title="Sair"><i class="fas fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+
+    <!-- Bottom nav mobile -->
+    <nav class="mob-nav">
+      <div class="mob-it on"><i class="fas fa-folder-open"></i><span>Arquivos</span></div>
+      <div class="mob-it" onclick="visualizarTag()"><i class="fas fa-eye"></i><span>Ver Tag</span></div>
+      <div class="mob-it" onclick="abrirAjuda()"><i class="fas fa-circle-question"></i><span>Ajuda</span></div>
+      <div class="mob-it" onclick="logout()"><i class="fas fa-right-from-bracket"></i><span>Sair</span></div>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- Select mobile -->
+    <div class="mob-proj">
+      <label><i class="fas fa-layer-group"></i></label>
+      <select id="projetoSelectM"></select>
+    </div>
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div>
+        <h1 id="tProj">Carregando…</h1>
+        <p id="tCount">—</p>
+      </div>
+      <div class="tb-right">
+        <button class="btn btn-prev" onclick="visualizarTag()">
+          <i class="fas fa-eye"></i><span class="hide-xs"> Ver como cliente</span>
+        </button>
+        <button class="btn btn-p btn-new-d" onclick="abrirModal()">
+          <i class="fas fa-plus"></i> Novo arquivo
+        </button>
+      </div>
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="content">
+      <!-- Barra de ordenação + dica de arrastar -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <span class="sort-label">Ordenar:</span>
+          <div class="sort-btns">
+            <button class="sort-btn on" id="sortCustom" onclick="ordenar('custom')">
+              <i class="fas fa-grip-vertical"></i> Personalizado
+            </button>
+            <button class="sort-btn" id="sortAZ" onclick="ordenar('az')">
+              <i class="fas fa-arrow-down-a-z"></i> A–Z
+            </button>
+            <button class="sort-btn" id="sortZA" onclick="ordenar('za')">
+              <i class="fas fa-arrow-up-z-a"></i> Z–A
+            </button>
+          </div>
+        </div>
+        <div class="drag-hint">
+          <i class="fas fa-hand-pointer"></i> Arraste os cards para reordenar
+        </div>
+      </div>
+      <div id="grid" class="files-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB mobile -->
+<button class="btn btn-p fab" onclick="abrirModal()" title="Novo arquivo">
+  <i class="fas fa-plus"></i>
+</button>
+
+<!-- MODAL ADD / EDITAR -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mhdr">
+      <h3 id="mTit">Novo Arquivo</h3>
+      <button class="mcls" onclick="fecharModal()"><i class="fas fa-xmark"></i></button>
+    </div>
+    <label class="flbl">Nome *</label>
+    <input id="nome" placeholder="Ex: Manual do Proprietário" inputmode="text">
+    <label class="flbl">Link *</label>
+    <input id="link" placeholder="Google Drive, OneDrive, URL pública…" inputmode="url">
+    <span class="ip-lbl">Ícone</span>
+    <div class="ip-grid" id="ipGrid"></div>
+    <select id="icone"></select>
+    <p id="ferr" class="ferr"></p>
+    <div class="mfoot">
+      <button class="btn btn-g" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-p" id="btnSv" onclick="salvar()">
+        <span id="lblSv">Salvar</span><span class="spin" id="spSv"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AJUDA -->
+<div class="modal-bg help-modal" id="modalAjuda">
+  <div class="modal" style="max-width:400px">
+    <div class="mhdr">
+      <h3><i class="fas fa-circle-question" style="color:var(--accent);margin-right:8px"></i>Ajuda & Suporte</h3>
+      <button class="mcls" onclick="fecharAjuda()"><i class="fas fa-xmark"></i></button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+      Encontrou algum problema ou tem dúvidas? Entre em contato:
+    </p>
+    <div class="help-info">
+      <div class="help-row">
+        <i class="fas fa-envelope"></i>
+        <div>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;font-weight:700;letter-spacing:.05em">Email</p>
+          <a href="mailto:3di.printer3d@gmail.com">3di.printer3d@gmail.com</a>
+        </div>
+      </div>
+      <div class="help-row">
+        <i class="fab fa-whatsapp" style="color:#22C55E"></i>
+        <div>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;font-weight:700;letter-spacing:.05em">WhatsApp</p>
+          <a href="https://wa.me/55?text=Olá, preciso de ajuda com o NexTag" target="_blank">Abrir conversa</a>
+        </div>
+      </div>
+      <div class="help-row" style="background:#FFF7ED;border-color:#FED7AA">
+        <i class="fas fa-lightbulb" style="color:#F59E0B"></i>
+        <p style="font-size:12px;color:#92400E;line-height:1.5">
+          Se um novo projeto não aparecer, faça <strong>logout e login novamente</strong> — a lista de projetos é atualizada a cada login.
+        </p>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-g" onclick="fecharAjuda()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEWER -->
+<div class="viewer" id="viewer">
+  <div class="vbar">
+    <span id="vNome">—</span>
+    <div style="display:flex;gap:8px">
+      <a id="vDl" target="_blank"><button class="btn btn-g btn-sm"><i class="fas fa-download"></i></button></a>
+      <button class="btn btn-g btn-sm" onclick="fecharViewer()"><i class="fas fa-xmark"></i> Fechar</button>
+    </div>
+  </div>
+  <iframe id="vFrame"></iframe>
+</div>
+
+<div id="toast"><i id="tIc" class="fas fa-check-circle"></i><span id="tMsg"></span></div>
+
+<script>
+const API="https://script.google.com/macros/s/AKfycbzv-05N6bhfLiuXLYK8L83_8erV7G9mAeiEZijGAs5xcojTVo3cE-e92g-OLMGFMt4gMQ/exec";
+const ICONS=[
+  {c:"fas fa-file",l:"Arquivo"},{c:"fas fa-file-pdf",l:"PDF"},
+  {c:"fas fa-file-word",l:"Word"},{c:"fas fa-file-excel",l:"Excel"},
+  {c:"fas fa-file-powerpoint",l:"PPT"},{c:"fas fa-image",l:"Imagem"},
+  {c:"fas fa-video",l:"Vídeo"},{c:"fas fa-music",l:"Áudio"},
+  {c:"fas fa-drafting-compass",l:"Planta"},{c:"fas fa-ruler-combined",l:"Projeto"},
+  {c:"fas fa-hard-hat",l:"Obra"},{c:"fas fa-house",l:"Imóvel"},
+  {c:"fas fa-shield-alt",l:"Garantia"},{c:"fas fa-file-contract",l:"Contrato"},
+  {c:"fas fa-address-book",l:"Contatos"},{c:"fas fa-book",l:"Manual"},
+  {c:"fas fa-camera",l:"Fotos"},{c:"fas fa-map",l:"Mapa"},
+  {c:"fas fa-chart-bar",l:"Relatório"},{c:"fas fa-link",l:"Link"},
+  {c:"fas fa-folder",l:"Pasta"},{c:"fas fa-key",l:"Acesso"},
+  {c:"fas fa-tools",l:"Téc"},{c:"fas fa-clipboard-list",l:"Lista"},
+];
+
+let user=null,proj=null,icon=ICONS[0].c;
+let arquivos=[];       // lista original do servidor
+let ordemCustom=null;  // chave no localStorage para ordem por projeto
+let sortMode="custom"; // az | za | custom
+
+// ─── Proteção de rota ───
+function iniciar(){
+  const r=localStorage.getItem("userData");
+  if(!r){location.href="index.html";return}
+  user=JSON.parse(r);
+  if(!user?.token){forcarLogout();return}
+  document.getElementById("av").textContent=user.usuario.charAt(0).toUpperCase();
+  document.getElementById("unm").textContent=user.usuario;
+  buildIcons();carregarProjetos();
+}
+
+// ─── Grade de ícones ───
+function buildIcons(){
+  const g=document.getElementById("ipGrid");g.innerHTML="";
+  ICONS.forEach(ic=>{
+    const d=document.createElement("div");
+    d.className="ip-opt"+(ic.c===ICONS[0].c?" on":"");
+    d.dataset.c=ic.c;
+    d.innerHTML=`<i class="${ic.c}"></i><span>${ic.l}</span>`;
+    d.addEventListener("click",()=>selIcon(ic.c));
+    g.appendChild(d);
+  });
+}
+function selIcon(c){
+  icon=c;
+  document.querySelectorAll(".ip-opt").forEach(e=>e.classList.toggle("on",e.dataset.c===c));
+}
+
+// ─── API JSONP ───
+function api(p,cb,er){
+  const s=document.createElement("script");
+  const n="cb_"+Date.now()+"_"+(Math.random()*9999|0);
+  const t=setTimeout(()=>{delete window[n];s.remove();if(er)er("Tempo esgotado.")},12000);
+  window[n]=r=>{clearTimeout(t);delete window[n];s.remove();cb(r)};
+  s.src=API+"?"+new URLSearchParams(p)+"&callback="+n;
+  document.body.appendChild(s);
+}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+
+// ─── Toast ───
+function toast(m,t="ok"){
+  document.getElementById("tMsg").textContent=m;
+  document.getElementById("tIc").className=t==="ok"?"fas fa-check-circle":"fas fa-exclamation-circle";
+  const e=document.getElementById("toast");e.className="show";
+  setTimeout(()=>e.classList.remove("show"),2800);
+}
+
+// ─── Auth ───
+function logout(){api({action:"logout",token:user.token},()=>{});forcarLogout()}
+function forcarLogout(){localStorage.removeItem("userData");location.href="index.html"}
+function visualizarTag(){window.open("tag.html?id="+proj,"_blank")}
+
+// ─── Ajuda ───
+function abrirAjuda(){document.getElementById("modalAjuda").classList.add("open")}
+function fecharAjuda(){document.getElementById("modalAjuda").classList.remove("open")}
+
+// ─── Sincroniza selects desktop + mobile ───
+function carregarProjetos(){
+  ["projetoSelect","projetoSelectM"].forEach(id=>{
+    const s=document.getElementById(id);s.innerHTML="";
+    user.projetos.forEach(p=>{const o=document.createElement("option");o.value=p;o.textContent=p;s.appendChild(o)});
+    s.onchange=()=>{
+      proj=s.value;
+      document.getElementById("projetoSelect").value=proj;
+      document.getElementById("projetoSelectM").value=proj;
+      carregarArquivos();
+    };
+  });
+  proj=user.projetos[0];carregarArquivos();
+}
+
+// ─── Chave localStorage para ordem custom ───
+function chaveOrdem(){return"ordem_"+user.usuario+"_"+proj}
+
+// ─── Ordenação ───
+function ordenar(modo){
+  sortMode=modo;
+  document.getElementById("sortCustom").classList.toggle("on",modo==="custom");
+  document.getElementById("sortAZ").classList.toggle("on",modo==="az");
+  document.getElementById("sortZA").classList.toggle("on",modo==="za");
+  renderizarArquivos();
+}
+
+function getArquivosOrdenados(){
+  let lista=[...arquivos];
+  if(sortMode==="az") return lista.sort((a,b)=>a.nome.localeCompare(b.nome,"pt"));
+  if(sortMode==="za") return lista.sort((a,b)=>b.nome.localeCompare(a.nome,"pt"));
+  // custom: aplica ordem salva no localStorage
+  const savedOrder=JSON.parse(localStorage.getItem(chaveOrdem())||"null");
+  if(savedOrder){
+    const idx=Object.fromEntries(savedOrder.map((n,i)=>[n,i]));
+    lista.sort((a,b)=>(idx[a.nome]??999)-(idx[b.nome]??999));
+  }
+  return lista;
+}
+
+// ─── Skeletons enquanto carrega ───
+function showSkels(){
+  document.getElementById("grid").innerHTML=[1,2,3,4].map(()=>`
+    <div class="file-card">
+      <div class="skel" style="width:48px;height:48px;border-radius:12px"></div>
+      <div style="width:100%">
+        <div class="skel" style="height:13px;width:75%;margin-bottom:7px"></div>
+        <div class="skel" style="height:11px;width:45%"></div>
+      </div>
+    </div>`).join("");
+}
+
+// ─── Carrega arquivos ───
+function carregarArquivos(){
+  document.getElementById("tProj").textContent=proj;
+  document.getElementById("tCount").textContent="Carregando…";
+  showSkels();
+  api({action:"getArquivos",projeto:proj},res=>{
+    arquivos=res.arquivos||[];
+    const n=arquivos.length;
+    document.getElementById("tCount").textContent=n===0?"Nenhum arquivo":`${n} arquivo${n>1?"s":""}`;
+    renderizarArquivos();
+  },()=>{
+    document.getElementById("grid").innerHTML=`<div class="empty"><i class="fas fa-wifi-slash"></i><p>Erro ao carregar.<br>Verifique sua conexão.</p></div>`;
+  });
+}
+
+// ─── Renderiza grid ───
+function renderizarArquivos(){
+  const g=document.getElementById("grid");
+  const lista=getArquivosOrdenados();
+  if(!lista.length){
+    g.innerHTML=`<div class="empty"><i class="fas fa-folder-open"></i><p>Nenhum arquivo ainda.<br>Clique em <strong>+ Novo arquivo</strong> para começar.</p></div>`;
+    return;
+  }
+  g.innerHTML="";
+  lista.forEach(ar=>g.appendChild(criarCard(ar)));
+  iniciarDrag();
+}
+
+// ─── Cria card de arquivo ───
+function criarCard(ar){
+  const m=ICONS.find(i=>i.c===ar.icone)||{l:"Arquivo"};
+  const d=document.createElement("div");
+  d.className="file-card";
+  d.dataset.nome=ar.nome;
+  d.draggable=true;
+  d.innerHTML=`
+    <i class="fas fa-grip-dots-vertical drag-handle" title="Arrastar para reordenar"></i>
+    <div class="f-icon-wrap"><i class="${esc(ar.icone||"fas fa-file")}"></i></div>
+    <div class="f-body">
+      <div class="f-name" title="${esc(ar.nome)}">${esc(ar.nome)}</div>
+      <div class="f-type">${esc(m.l)}</div>
+    </div>
+    <div class="f-acts">
+      <button class="ib" onclick='abrirViewer("${esc(ar.link)}","${esc(ar.nome)}")'>
+        <i class="fas fa-eye"></i><span>Ver</span>
+      </button>
+      <button class="ib" onclick='editar(${JSON.stringify({nome:ar.nome,link:ar.link,icone:ar.icone})})'>
+        <i class="fas fa-pen"></i><span>Editar</span>
+      </button>
+      <button class="ib del" onclick='excluir("${esc(ar.nome)}")'>
+        <i class="fas fa-trash"></i><span>Excluir</span>
+      </button>
+    </div>`;
+  return d;
+}
+
+// ─── DRAG AND DROP para reordenar ───
+let dragSrc=null;
+function iniciarDrag(){
+  if(sortMode!=="custom") return; // só permite arrastar no modo personalizado
+  const cards=document.querySelectorAll(".file-card");
+  cards.forEach(c=>{
+    c.addEventListener("dragstart",e=>{
+      dragSrc=c;c.classList.add("dragging");
+      e.dataTransfer.effectAllowed="move";
+      e.dataTransfer.setData("text/plain",c.dataset.nome);
+    });
+    c.addEventListener("dragend",()=>{
+      c.classList.remove("dragging");
+      document.querySelectorAll(".file-card").forEach(x=>x.classList.remove("drag-over"));
+      salvarOrdem();
+    });
+    c.addEventListener("dragover",e=>{
+      e.preventDefault();e.dataTransfer.dropEffect="move";
+      if(c!==dragSrc) c.classList.add("drag-over");
+    });
+    c.addEventListener("dragleave",()=>c.classList.remove("drag-over"));
+    c.addEventListener("drop",e=>{
+      e.preventDefault();
+      if(c===dragSrc) return;
+      const g=document.getElementById("grid");
+      const cards=[...g.querySelectorAll(".file-card")];
+      const si=cards.indexOf(dragSrc);
+      const di=cards.indexOf(c);
+      if(si<di) g.insertBefore(dragSrc,c.nextSibling);
+      else g.insertBefore(dragSrc,c);
+      c.classList.remove("drag-over");
+    });
+  });
+}
+
+// ─── Salva a ordem atual no localStorage ───
+function salvarOrdem(){
+  const nomes=[...document.querySelectorAll(".file-card")].map(c=>c.dataset.nome);
+  localStorage.setItem(chaveOrdem(),JSON.stringify(nomes));
+  toast("Ordem salva!");
+}
+
+// ─── Modal ───
+function abrirModal(){
+  limpar();document.getElementById("mTit").textContent="Novo Arquivo";
+  document.getElementById("modal").classList.add("open");
+  setTimeout(()=>document.getElementById("nome").focus(),200);
+}
+function fecharModal(){document.getElementById("modal").classList.remove("open")}
+function limpar(){
+  document.getElementById("nome").value="";
+  document.getElementById("link").value="";
+  document.getElementById("ferr").style.display="none";
+  selIcon(ICONS[0].c);
+}
+function editar(a){
+  limpar();document.getElementById("mTit").textContent="Editar Arquivo";
+  document.getElementById("nome").value=a.nome;
+  document.getElementById("link").value=a.link;
+  selIcon(a.icone||ICONS[0].c);
+  document.getElementById("modal").classList.add("open");
+}
+
+// ─── Salvar arquivo ───
+function salvar(){
+  const nome=document.getElementById("nome").value.trim();
+  const link=document.getElementById("link").value.trim();
+  const err=document.getElementById("ferr");
+  const btn=document.getElementById("btnSv"),sp=document.getElementById("spSv"),lb=document.getElementById("lblSv");
+  err.style.display="none";
+  if(!nome){err.textContent="Informe um nome.";err.style.display="block";return}
+  if(!link){err.textContent="Informe o link.";err.style.display="block";return}
+  btn.disabled=true;sp.style.display="inline-block";lb.textContent="Salvando…";
+  api({action:"addArquivo",projeto:proj,nome,link,icone:icon,token:user.token},res=>{
+    btn.disabled=false;sp.style.display="none";lb.textContent="Salvar";
+    if(!res.ok){if(res.erro?.includes("expirada")){forcarLogout();return}err.textContent=res.erro||"Erro.";err.style.display="block";return}
+    fecharModal();toast("Arquivo salvo!");carregarArquivos();
+  },m=>{btn.disabled=false;sp.style.display="none";lb.textContent="Salvar";err.textContent=m;err.style.display="block"});
+}
+
+// ─── Excluir ───
+function excluir(nome){
+  if(!confirm(`Excluir "${nome}"?`))return;
+  api({action:"deleteArquivo",projeto:proj,nome,token:user.token},res=>{
+    if(!res.ok){toast(res.erro||"Erro.","err");return}
+    toast("Arquivo excluído.");carregarArquivos();
+  });
+}
+
+// ─── Viewer ───
+function abrirViewer(link,nome){
+  document.getElementById("vFrame").src=link;
+  document.getElementById("vDl").href=link;
+  document.getElementById("vNome").textContent=nome;
+  document.getElementById("viewer").classList.add("open");
+}
+function fecharViewer(){document.getElementById("viewer").classList.remove("open");document.getElementById("vFrame").src=""}
+
+// ─── Fecha modais clicando fora ───
+["modal","modalAjuda"].forEach(id=>{
+  document.getElementById(id).addEventListener("click",e=>{
+    if(e.target===document.getElementById(id))
+      document.getElementById(id).classList.remove("open");
+  });
+});
+
+iniciar();
+</script>
+</body>
+</html>
